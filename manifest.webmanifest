@@ -1,5 +1,5 @@
 {
-  "name": "Hushållsbudget v11.2.2 LTS (stabil)",
+  "name": "Hushållsbudget v12",
   "short_name": "Budget",
   "start_url": "./",
   "scope": "./",
@@ -7,8 +7,8 @@
   "background_color": "#ffffff",
   "theme_color": "#1f4e79",
   "icons": [
-    {"src": "icons/zahnere-192.png", "sizes": "192x192", "type": "image/png"},
-    {"src": "icons/zahnere-512.png", "sizes": "512x512", "type": "image/png"},
+    {"src": "icons/budget-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "icons/budget-512.png", "sizes": "512x512", "type": "image/png"},
     {"src": "icons/apple-touch-icon.png", "sizes": "180x180", "type": "image/png", "purpose":"any"}
   ]
 }
