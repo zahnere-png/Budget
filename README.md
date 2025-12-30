@@ -1,16 +1,14 @@
-# Hushållsbudget v12.2 (felfri + dashboard)
+# Hushållsbudget v12.3 (betalning fix)
 
-**Fixar:**
-- **Månader**: robust laddning från `budget_*`, `budgetV113_*`, `budgetV112_*` + **dual write** (neutral + källa), säker in/ut.
-- **Knappar per rad**: 🎯/👁️/🔗/💳 via event‑delegation (fungerar på alla rader, även nya, oavsett DOM‑uppdateringar).
-- **Dashboard tillbaka**: toppsumma (kort), progressbar, och **pie‑diagram** med Chart.js.
-- **Focus‑clear** och nattläge kvar som tidigare.
-- **PWA/offline** med cache‑bust.
+**Detta är en minimal uppdatering av v12.2:**
+- Endast **💳 betalningsknappen per rad** är åtgärdad (öppnar en payments‑drawer, lagrar per rad+månad i `ROWPAID_KEY`).
+- Övrigt (månader, dashboard, delning m.m.) är oförändrat från v12.2.
 
 ## Publicera
-1. Skapa repo (t.ex. `budget-pwa-v12.2`).
-2. Lägg allt i `main`.
+1. Skapa repo (t.ex. `budget-pwa-v12.3`).
+2. Lägg upp allt i `main`.
 3. Settings → Pages → Source = **GitHub Actions**.
 
-## Tips
-- Efter deploy: **Ctrl+F5 / Cmd+Shift+R** eller unregister SW om du ser gammal cache.
+## Noter
+- Service Worker är versionerad `v12.3` för cache‑bust.
+- Liten klass `label.paid` sätts när en rad markerats som betald.
