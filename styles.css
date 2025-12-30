@@ -9,8 +9,27 @@ header .subtitle{margin:4px 0 0;color:#e5e7eb;font-size:13px}
 header .pill{background:#0ea5e9;color:#ecfeff;padding:2px 8px;border-radius:999px;font-size:12px;margin-left:6px}
 header .header-actions button{border:1px solid #3b82f6;background:#1e293b;color:#fff;border-radius:10px;padding:8px 10px;cursor:pointer}
 
+nav.tabs{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:10px 16px;background:var(--paper);border-bottom:1px solid var(--line)}
+nav .year-picker select{padding:6px 10px;border:1px solid var(--line);background:transparent;border-radius:8px;color:var(--ink)}
+nav .month-buttons{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px}
+nav .month-buttons button{padding:8px 10px;border-radius:20px;border:1px solid var(--brand);background:transparent;color:var(--brand);font-weight:600;transition:all .2s}
+nav .month-buttons button.active, nav .month-buttons button:hover{background:var(--brand);color:#fff}
+nav .tab-actions{margin-left:auto;display:flex;gap:8px}
+nav .tab-actions .danger{border-color:#ef4444;color:#ef4444;background:transparent}
+
 main{max-width:1100px;margin:0 auto;padding:16px}
 section{margin:12px 0;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:12px}
+.dash .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px}
+.card h3{margin:0 0 8px}
+.progress-wrap{margin-bottom:10px}
+.progress-label{display:flex;justify-content:space-between;color:var(--muted);font-size:13px}
+.progress{width:100%;height:10px;background:#e2e8f0;border-radius:999px;overflow:hidden;border:1px solid var(--line)}
+.progress #leftBar{height:100%;width:0%;background:linear-gradient(90deg,#10b981,#84cc16);transition:width .4s}
+.kv{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
+.kv li{display:flex;justify-content:space-between;background:var(--paper);border:1px dashed var(--line);border-radius:10px;padding:8px}
+.kv li.res{grid-column:1/-1;border-style:solid}
+
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
 label{display:flex;flex-direction:column;font-size:12px;color:var(--muted);position:relative;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:10px}
 label .row-ctl{position:absolute;right:8px;top:8px;display:flex;gap:6px}
@@ -32,3 +51,20 @@ label .budget{width:120px}
 .budgetCat{border-color:#10b981;color:#065f46}
 label.share{border-color:#34d399}
 label.hidden{opacity:.45}
+
+.share-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin:8px 0}
+.share-people{display:flex;flex-direction:column;gap:10px}
+.person-share{border:1px dashed var(--line);border-radius:12px;padding:10px;background:var(--paper)}
+.person-share .row{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr auto;gap:8px;align-items:center}
+.person-share .bar{height:8px;background:#e5e7eb;border-radius:999px;overflow:hidden;margin-top:6px}
+.person-share .bar>div{height:100%;width:0%;background:linear-gradient(90deg,#22c55e,#16a34a);transition:width .3s}
+.person-share .toggle{border:1px solid #cbd5e1;background:transparent;color:#0b1220;border-radius:8px;padding:4px 6px;font-size:12px}
+.person-share.dhidden{opacity:.5}
+
+#auditWrap .help{color:var(--muted)}
+#auditTable{overflow-x:auto}
+#auditTable table{width:100%;border-collapse:collapse}
+#auditTable th,#auditTable td{border:1px solid var(--line);padding:6px;text-align:right}
+#auditTable th:first-child,#auditTable td:first-child{text-align:left}
+
+footer{color:var(--muted);text-align:center;padding:12px}

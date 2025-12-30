@@ -1,12 +1,9 @@
-# Hushållsbudget v11.3 – Defaults: Global=ON, per-rad=OFF
+# Hushållsbudget v11.3 (full) – Global=ON, per-rad=OFF
 
-**Nytt:**
-- **Globalt Budgetläge** är **ON** som default (budget & Avstämning redo direkt).
-- **🎯 Budget per rad** är **OFF** som default – du tänder **rad för rad**.
-- Existerande data påverkas inte; för nya rader/månader används dessa default.
+**Full återställning** med alla funktioner (inkomster, fasta/rörliga/spar, delning, per‑rad betalningar, avstämning, årsöversikt, CSV/PDF, PWA, anti‑zoom). Default: global budgetläge **ON**, per‑rad **OFF**.
 
 ## Publicera
-1. Skapa repo (t.ex. `budget-pwa-v11.3`).
+1. Skapa repo (t.ex. `budget-pwa-v11.3-full`).
 2. Ladda upp allt till `main`.
 3. Settings → Pages → Source = **GitHub Actions**.
-4. URL: `https://<ditt‑användarnamn>.github.io/budget-pwa-v11.3/`.
+4. URL: `https://<ditt‑användarnamn>.github.io/budget-pwa-v11.3-full/`.
