@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Hushållsbudget v10.1</title>
+  <title>Hushållsbudget v11</title>
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#1f4e79" />
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -15,8 +15,8 @@
 <body>
 <header>
   <div class="title">
-    <h1>Hushållsbudget <span class="pill">v10.1</span></h1>
-    <p class="subtitle">Bugfix: sparning, delning & robust kalkyl</p>
+    <h1>Hushållsbudget <span class="pill">v11</span></h1>
+    <p class="subtitle">Auto‑fördelning, Budget per rad, Avstämning & Per‑rad betalningar</p>
   </div>
   <div class="header-actions">
     <button id="darkToggle" aria-label="Växla mörkt läge">🌙</button>
@@ -118,31 +118,32 @@
   <section class="sec fixed">
     <h2>Fasta utgifter</h2>
     <div class="grid" id="fixedBaseGrid">
-      <label class="cat" data-id="boende">🏠 Hyra/Bolån<input id="boende" type="text" inputmode="decimal"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button></label>
-      <label class="cat" data-id="bredband">🌐 Bredband<input id="bredband" type="text" inputmode="decimal"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button></label>
-      <label class="cat" data-id="telefoni">📞 Telefoni<input id="telefoni" type="text" inputmode="decimal"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button></label>
-      <label class="cat" data-id="barnomsorg1">👶 Barnomsorg 1<input id="barnomsorg1" type="text" inputmode="decimal"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button></label>
-      <label class="cat" data-id="barnomsorg2">👶 Barnomsorg 2<input id="barnomsorg2" type="text" inputmode="decimal"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button></label>
-      <label class="cat" data-id="fackforbund">🧰 Fackförbund<input id="fackforbund" type="text" inputmode="decimal"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button></label>
+      <label class="cat" data-id="boende">🏠 Hyra/Bolån<input id="boende" type="text" inputmode="decimal"><div class="row-ctl"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button><button class="payCat" title="Betalningar">💳</button></div><div class="row-extra"><span class="budget-wrap">🎯 Budget <input class="budget" type="text" inputmode="decimal" placeholder="kr"></span><div class="row-budget"><div class="bar"><div></div></div><small class="txt">—</small></div></div></label>
+      <label class="cat" data-id="bredband">🌐 Bredband<input id="bredband" type="text" inputmode="decimal"><div class="row-ctl"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button><button class="payCat" title="Betalningar">💳</button></div><div class="row-extra"><span class="budget-wrap">🎯 Budget <input class="budget" type="text" inputmode="decimal" placeholder="kr"></span><div class="row-budget"><div class="bar"><div></div></div><small class="txt">—</small></div></div></label>
+      <label class="cat" data-id="telefoni">📞 Telefoni<input id="telefoni" type="text" inputmode="decimal"><div class="row-ctl"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button><button class="payCat" title="Betalningar">💳</button></div><div class="row-extra"><span class="budget-wrap">🎯 Budget <input class="budget" type="text" inputmode="decimal" placeholder="kr"></span><div class="row-budget"><div class="bar"><div></div></div><small class="txt">—</small></div></div></label>
+      <label class="cat" data-id="barnomsorg1">👶 Barnomsorg 1<input id="barnomsorg1" type="text" inputmode="decimal"><div class="row-ctl"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button><button class="payCat" title="Betalningar">💳</button></div><div class="row-extra"><span class="budget-wrap">🎯 Budget <input class="budget" type="text" inputmode="decimal" placeholder="kr"></span><div class="row-budget"><div class="bar"><div></div></div><small class="txt">—</small></div></div></label>
+      <label class="cat" data-id="barnomsorg2">👶 Barnomsorg 2<input id="barnomsorg2" type="text" inputmode="decimal"><div class="row-ctl"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button><button class="payCat" title="Betalningar">💳</button></div><div class="row-extra"><span class="budget-wrap">🎯 Budget <input class="budget" type="text" inputmode="decimal" placeholder="kr"></span><div class="row-budget"><div class="bar"><div></div></div><small class="txt">—</small></div></div></label>
+      <label class="cat" data-id="fackforbund">🧰 Fackförbund<input id="fackforbund" type="text" inputmode="decimal"><div class="row-ctl"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button><button class="payCat" title="Betalningar">💳</button></div><div class="row-extra"><span class="budget-wrap">🎯 Budget <input class="budget" type="text" inputmode="decimal" placeholder="kr"></span><div class="row-budget"><div class="bar"><div></div></div><small class="txt">—</small></div></div></label>
     </div>
+
     <h3 class="sub">Försäkringar</h3>
     <div class="grid subgrid" id="fixedInsGrid">
-      <label class="cat" data-id="personfors">🧑‍⚕️ Personförsäkring<input id="personfors" type="text" inputmode="decimal"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button></label>
-      <label class="cat" data-id="barnfors">🧒 Barnförsäkring<input id="barnfors" type="text" inputmode="decimal"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button></label>
-      <label class="cat" data-id="djurfors">🐾 Djurförsäkring<input id="djurfors" type="text" inputmode="decimal"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button></label>
-      <label class="cat" data-id="hemfors">🏡 Hemförsäkring<input id="hemfors" type="text" inputmode="decimal"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button></label>
-      <label class="cat" data-id="bilfors">🚗 Bilförsäkring<input id="bilfors" type="text" inputmode="decimal"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button></label>
-      <label class="cat" data-id="fors_ovrigt">➕ Övrigt<input id="fors_ovrigt" type="text" inputmode="decimal"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button></label>
+      <label class="cat" data-id="personfors">🧑‍⚕️ Personförsäkring<input id="personfors" type="text" inputmode="decimal"><div class="row-ctl"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button><button class="payCat" title="Betalningar">💳</button></div><div class="row-extra"><span class="budget-wrap">🎯 Budget <input class="budget" type="text" inputmode="decimal" placeholder="kr"></span><div class="row-budget"><div class="bar"><div></div></div><small class="txt">—</small></div></div></label>
+      <label class="cat" data-id="barnfors">🧒 Barnförsäkring<input id="barnfors" type="text" inputmode="decimal"><div class="row-ctl"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button><button class="payCat" title="Betalningar">💳</button></div><div class="row-extra"><span class="budget-wrap">🎯 Budget <input class="budget" type="text" inputmode="decimal" placeholder="kr"></span><div class="row-budget"><div class="bar"><div></div></div><small class="txt">—</small></div></div></label>
+      <label class="cat" data-id="djurfors">🐾 Djurförsäkring<input id="djurfors" type="text" inputmode="decimal"><div class="row-ctl"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button><button class="payCat" title="Betalningar">💳</button></div><div class="row-extra"><span class="budget-wrap">🎯 Budget <input class="budget" type="text" inputmode="decimal" placeholder="kr"></span><div class="row-budget"><div class="bar"><div></div></div><small class="txt">—</small></div></div></label>
+      <label class="cat" data-id="hemfors">🏡 Hemförsäkring<input id="hemfors" type="text" inputmode="decimal"><div class="row-ctl"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button><button class="payCat" title="Betalningar">💳</button></div><div class="row-extra"><span class="budget-wrap">🎯 Budget <input class="budget" type="text" inputmode="decimal" placeholder="kr"></span><div class="row-budget"><div class="bar"><div></div></div><small class="txt">—</small></div></div></label>
+      <label class="cat" data-id="bilfors">🚗 Bilförsäkring<input id="bilfors" type="text" inputmode="decimal"><div class="row-ctl"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button><button class="payCat" title="Betalningar">💳</button></div><div class="row-extra"><span class="budget-wrap">🎯 Budget <input class="budget" type="text" inputmode="decimal" placeholder="kr"></span><div class="row-budget"><div class="bar"><div></div></div><small class="txt">—</small></div></div></label>
+      <label class="cat" data-id="fors_ovrigt">➕ Övrigt<input id="fors_ovrigt" type="text" inputmode="decimal"><div class="row-ctl"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button><button class="payCat" title="Betalningar">💳</button></div><div class="row-extra"><span class="budget-wrap">🎯 Budget <input class="budget" type="text" inputmode="decimal" placeholder="kr"></span><div class="row-budget"><div class="bar"><div></div></div><small class="txt">—</small></div></div></label>
     </div>
     <div class="subtotal">Summa försäkringar: <span id="sum_fors">0 kr</span></div>
 
     <h3 class="sub">Streaming</h3>
     <div class="grid subgrid" id="fixedStreamGrid">
-      <label class="cat" data-id="stream_netflix">🎬 Netflix<input id="stream_netflix" type="text" inputmode="decimal"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button></label>
-      <label class="cat" data-id="stream_spotify">🎵 Spotify<input id="stream_spotify" type="text" inputmode="decimal"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button></label>
-      <label class="cat" data-id="stream_hbo">🎬 HBO<input id="stream_hbo" type="text" inputmode="decimal"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button></label>
-      <label class="cat" data-id="stream_ovrigt1">➕ Övrigt 1<input id="stream_ovrigt1" type="text" inputmode="decimal"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button></label>
-      <label class="cat" data-id="stream_ovrigt2">➕ Övrigt 2<input id="stream_ovrigt2" type="text" inputmode="decimal"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button></label>
+      <label class="cat" data-id="stream_netflix">🎬 Netflix<input id="stream_netflix" type="text" inputmode="decimal"><div class="row-ctl"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button><button class="payCat" title="Betalningar">💳</button></div><div class="row-extra"><span class="budget-wrap">🎯 Budget <input class="budget" type="text" inputmode="decimal" placeholder="kr"></span><div class="row-budget"><div class="bar"><div></div></div><small class="txt">—</small></div></div></label>
+      <label class="cat" data-id="stream_spotify">🎵 Spotify<input id="stream_spotify" type="text" inputmode="decimal"><div class="row-ctl"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button><button class="payCat" title="Betalningar">💳</button></div><div class="row-extra"><span class="budget-wrap">🎯 Budget <input class="budget" type="text" inputmode="decimal" placeholder="kr"></span><div class="row-budget"><div class="bar"><div></div></div><small class="txt">—</small></div></div></label>
+      <label class="cat" data-id="stream_hbo">🎬 HBO<input id="stream_hbo" type="text" inputmode="decimal"><div class="row-ctl"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button><button class="payCat" title="Betalningar">💳</button></div><div class="row-extra"><span class="budget-wrap">🎯 Budget <input class="budget" type="text" inputmode="decimal" placeholder="kr"></span><div class="row-budget"><div class="bar"><div></div></div><small class="txt">—</small></div></div></label>
+      <label class="cat" data-id="stream_ovrigt1">➕ Övrigt 1<input id="stream_ovrigt1" type="text" inputmode="decimal"><div class="row-ctl"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button><button class="payCat" title="Betalningar">💳</button></div><div class="row-extra"><span class="budget-wrap">🎯 Budget <input class="budget" type="text" inputmode="decimal" placeholder="kr"></span><div class="row-budget"><div class="bar"><div></div></div><small class="txt">—</small></div></div></label>
+      <label class="cat" data-id="stream_ovrigt2">➕ Övrigt 2<input id="stream_ovrigt2" type="text" inputmode="decimal"><div class="row-ctl"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button><button class="payCat" title="Betalningar">💳</button></div><div class="row-extra"><span class="budget-wrap">🎯 Budget <input class="budget" type="text" inputmode="decimal" placeholder="kr"></span><div class="row-budget"><div class="bar"><div></div></div><small class="txt">—</small></div></div></label>
     </div>
     <div class="subtotal">Summa streaming: <span id="sum_streaming">0 kr</span></div>
 
@@ -153,22 +154,22 @@
   <section class="sec var">
     <h2>Rörliga utgifter</h2>
     <div class="grid" id="varBaseGrid">
-      <label class="cat" data-id="mat">🛒 Mat<input id="mat" type="text" inputmode="decimal"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button></label>
-      <label class="cat" data-id="hushall">🧼 Hushåll<input id="hushall" type="text" inputmode="decimal"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button></label>
-      <label class="cat" data-id="klader">👟 Kläder<input id="klader" type="text" inputmode="decimal"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button></label>
-      <label class="cat" data-id="nojen">🎉 Nöjen<input id="nojen" type="text" inputmode="decimal"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button></label>
-      <label class="cat" data-id="halsa">💪 Hälsa<input id="halsa" type="text" inputmode="decimal"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button></label>
-      <label class="cat" data-id="energi">⚡ El/Värme<input id="energi" type="text" inputmode="decimal"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button></label>
-      <label class="cat" data-id="ror_ovrigt">➕ Övrigt<input id="ror_ovrigt" type="text" inputmode="decimal"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button></label>
+      <label class="cat" data-id="mat">🛒 Mat<input id="mat" type="text" inputmode="decimal"><div class="row-ctl"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button><button class="payCat" title="Betalningar">💳</button></div><div class="row-extra"><span class="budget-wrap">🎯 Budget <input class="budget" type="text" inputmode="decimal" placeholder="kr"></span><div class="row-budget"><div class="bar"><div></div></div><small class="txt">—</small></div></div></label>
+      <label class="cat" data-id="hushall">🧼 Hushåll<input id="hushall" type="text" inputmode="decimal"><div class="row-ctl"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button><button class="payCat" title="Betalningar">💳</button></div><div class="row-extra"><span class="budget-wrap">🎯 Budget <input class="budget" type="text" inputmode="decimal" placeholder="kr"></span><div class="row-budget"><div class="bar"><div></div></div><small class="txt">—</small></div></div></label>
+      <label class="cat" data-id="klader">👟 Kläder<input id="klader" type="text" inputmode="decimal"><div class="row-ctl"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button><button class="payCat" title="Betalningar">💳</button></div><div class="row-extra"><span class="budget-wrap">🎯 Budget <input class="budget" type="text" inputmode="decimal" placeholder="kr"></span><div class="row-budget"><div class="bar"><div></div></div><small class="txt">—</small></div></div></label>
+      <label class="cat" data-id="nojen">🎉 Nöjen<input id="nojen" type="text" inputmode="decimal"><div class="row-ctl"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button><button class="payCat" title="Betalningar">💳</button></div><div class="row-extra"><span class="budget-wrap">🎯 Budget <input class="budget" type="text" inputmode="decimal" placeholder="kr"></span><div class="row-budget"><div class="bar"><div></div></div><small class="txt">—</small></div></div></label>
+      <label class="cat" data-id="halsa">💪 Hälsa<input id="halsa" type="text" inputmode="decimal"><div class="row-ctl"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button><button class="payCat" title="Betalningar">💳</button></div><div class="row-extra"><span class="budget-wrap">🎯 Budget <input class="budget" type="text" inputmode="decimal" placeholder="kr"></span><div class="row-budget"><div class="bar"><div></div></div><small class="txt">—</small></div></div></label>
+      <label class="cat" data-id="energi">⚡ El/Värme<input id="energi" type="text" inputmode="decimal"><div class="row-ctl"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button><button class="payCat" title="Betalningar">💳</button></div><div class="row-extra"><span class="budget-wrap">🎯 Budget <input class="budget" type="text" inputmode="decimal" placeholder="kr"></span><div class="row-budget"><div class="bar"><div></div></div><small class="txt">—</small></div></div></label>
+      <label class="cat" data-id="ror_ovrigt">➕ Övrigt<input id="ror_ovrigt" type="text" inputmode="decimal"><div class="row-ctl"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button><button class="payCat" title="Betalningar">💳</button></div><div class="row-extra"><span class="budget-wrap">🎯 Budget <input class="budget" type="text" inputmode="decimal" placeholder="kr"></span><div class="row-budget"><div class="bar"><div></div></div><small class="txt">—</small></div></div></label>
     </div>
 
     <h3 class="sub">Fordon</h3>
     <div class="grid subgrid" id="varFordonGrid">
-      <label class="cat" data-id="bransle">⛽ Bränsle<input id="bransle" type="text" inputmode="decimal"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button></label>
-      <label class="cat" data-id="service">🛠️ Service<input id="service" type="text" inputmode="decimal"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button></label>
-      <label class="cat" data-id="skatt">🧾 Skatt/Besiktning<input id="skatt" type="text" inputmode="decimal"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button></label>
-      <label class="cat" data-id="parkering">🅿️ Parkering<input id="parkering" type="text" inputmode="decimal"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button></label>
-      <label class="cat" data-id="fordon_ovrigt">➕ Övrigt fordon<input id="fordon_ovrigt" type="text" inputmode="decimal"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button></label>
+      <label class="cat" data-id="bransle">⛽ Bränsle<input id="bransle" type="text" inputmode="decimal"><div class="row-ctl"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button><button class="payCat" title="Betalningar">💳</button></div><div class="row-extra"><span class="budget-wrap">🎯 Budget <input class="budget" type="text" inputmode="decimal" placeholder="kr"></span><div class="row-budget"><div class="bar"><div></div></div><small class="txt">—</small></div></div></label>
+      <label class="cat" data-id="service">🛠️ Service<input id="service" type="text" inputmode="decimal"><div class="row-ctl"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button><button class="payCat" title="Betalningar">💳</button></div><div class="row-extra"><span class="budget-wrap">🎯 Budget <input class="budget" type="text" inputmode="decimal" placeholder="kr"></span><div class="row-budget"><div class="bar"><div></div></div><small class="txt">—</small></div></div></label>
+      <label class="cat" data-id="skatt">🧾 Skatt/Besiktning<input id="skatt" type="text" inputmode="decimal"><div class="row-ctl"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button><button class="payCat" title="Betalningar">💳</button></div><div class="row-extra"><span class="budget-wrap">🎯 Budget <input class="budget" type="text" inputmode="decimal" placeholder="kr"></span><div class="row-budget"><div class="bar"><div></div></div><small class="txt">—</small></div></div></label>
+      <label class="cat" data-id="parkering">🅿️ Parkering<input id="parkering" type="text" inputmode="decimal"><div class="row-ctl"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button><button class="payCat" title="Betalningar">💳</button></div><div class="row-extra"><span class="budget-wrap">🎯 Budget <input class="budget" type="text" inputmode="decimal" placeholder="kr"></span><div class="row-budget"><div class="bar"><div></div></div><small class="txt">—</small></div></div></label>
+      <label class="cat" data-id="fordon_ovrigt">➕ Övrigt fordon<input id="fordon_ovrigt" type="text" inputmode="decimal"><div class="row-ctl"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button><button class="payCat" title="Betalningar">💳</button></div><div class="row-extra"><span class="budget-wrap">🎯 Budget <input class="budget" type="text" inputmode="decimal" placeholder="kr"></span><div class="row-budget"><div class="bar"><div></div></div><small class="txt">—</small></div></div></label>
     </div>
     <div class="subtotal">Summa fordon: <span id="sum_fordon">0 kr</span></div>
 
@@ -179,13 +180,13 @@
   <section class="sec save">
     <h2>Sparande & mål</h2>
     <div class="grid" id="saveBaseGrid">
-      <label class="cat" data-id="spar1">🐷 Sparande 1<input id="spar1" type="text" inputmode="decimal"><button class="hideCat" title="Dölj">👁️</button></label>
-      <label class="cat" data-id="spar2">🐷 Sparande 2<input id="spar2" type="text" inputmode="decimal"><button class="hideCat" title="Dölj">👁️</button></label>
-      <label class="cat" data-id="spar3">🐷 Sparande 3<input id="spar3" type="text" inputmode="decimal"><button class="hideCat" title="Dölj">👁️</button></label>
-      <label class="cat" data-id="spar4">🐷 Sparande 4<input id="spar4" type="text" inputmode="decimal"><button class="hideCat" title="Dölj">👁️</button></label>
-      <label class="cat" data-id="spar5">🐷 Sparande 5<input id="spar5" type="text" inputmode="decimal"><button class="hideCat" title="Dölj">👁️</button></label>
-      <label class="cat" data-id="spar6">🐷 Sparande 6<input id="spar6" type="text" inputmode="decimal"><button class="hideCat" title="Dölj">👁️</button></label>
-      <label class="cat" data-id="skuld">📉 Skuldamortering<input id="skuld" type="text" inputmode="decimal"><button class="hideCat" title="Dölj">👁️</button></label>
+      <label class="cat" data-id="spar1">🐷 Sparande 1<input id="spar1" type="text" inputmode="decimal"><div class="row-ctl"><button class="hideCat" title="Dölj">👁️</button></div><div class="row-extra"><span class="budget-wrap">🎯 Budget <input class="budget" type="text" inputmode="decimal" placeholder="kr"></span><div class="row-budget"><div class="bar"><div></div></div><small class="txt">—</small></div></div></label>
+      <label class="cat" data-id="spar2">🐷 Sparande 2<input id="spar2" type="text" inputmode="decimal"><div class="row-ctl"><button class="hideCat" title="Dölj">👁️</button></div><div class="row-extra"><span class="budget-wrap">🎯 Budget <input class="budget" type="text" inputmode="decimal" placeholder="kr"></span><div class="row-budget"><div class="bar"><div></div></div><small class="txt">—</small></div></div></label>
+      <label class="cat" data-id="spar3">🐷 Sparande 3<input id="spar3" type="text" inputmode="decimal"><div class="row-ctl"><button class="hideCat" title="Dölj">👁️</button></div><div class="row-extra"><span class="budget-wrap">🎯 Budget <input class="budget" type="text" inputmode="decimal" placeholder="kr"></span><div class="row-budget"><div class="bar"><div></div></div><small class="txt">—</small></div></div></label>
+      <label class="cat" data-id="spar4">🐷 Sparande 4<input id="spar4" type="text" inputmode="decimal"><div class="row-ctl"><button class="hideCat" title="Dölj">👁️</button></div><div class="row-extra"><span class="budget-wrap">🎯 Budget <input class="budget" type="text" inputmode="decimal" placeholder="kr"></span><div class="row-budget"><div class="bar"><div></div></div><small class="txt">—</small></div></div></label>
+      <label class="cat" data-id="spar5">🐷 Sparande 5<input id="spar5" type="text" inputmode="decimal"><div class="row-ctl"><button class="hideCat" title="Dölj">👁️</button></div><div class="row-extra"><span class="budget-wrap">🎯 Budget <input class="budget" type="text" inputmode="decimal" placeholder="kr"></span><div class="row-budget"><div class="bar"><div></div></div><small class="txt">—</small></div></div></label>
+      <label class="cat" data-id="spar6">🐷 Sparande 6<input id="spar6" type="text" inputmode="decimal"><div class="row-ctl"><button class="hideCat" title="Dölj">👁️</button></div><div class="row-extra"><span class="budget-wrap">🎯 Budget <input class="budget" type="text" inputmode="decimal" placeholder="kr"></span><div class="row-budget"><div class="bar"><div></div></div><small class="txt">—</small></div></div></label>
+      <label class="cat" data-id="skuld">📉 Skuldamortering<input id="skuld" type="text" inputmode="decimal"><div class="row-ctl"><button class="hideCat" title="Dölj">👁️</button></div><div class="row-extra"><span class="budget-wrap">🎯 Budget <input class="budget" type="text" inputmode="decimal" placeholder="kr"></span><div class="row-budget"><div class="bar"><div></div></div><small class="txt">—</small></div></div></label>
     </div>
 
     <div class="custom-controls"><button id="addSaveCustom" class="secondary">+ Egen spar/skuld kategori</button></div>
@@ -198,12 +199,14 @@
     <div class="actions">
       <button id="csvBtn" class="secondary">Exportera månad‑CSV</button>
       <button id="pdfBtn">Exportera PDF</button>
+      <button id="closeMonthBtn" class="secondary">Stäng månaden</button>
+      <button id="openMonthBtn" class="secondary danger">Öppna igen</button>
     </div>
   </section>
 
   <section class="sec share">
     <h2>Fördelning mellan betalare</h2>
-    <p class="help">🔗‑markerade rader delas proportionellt mot lön. Här ser du **andel (%)**, **skall (kr)**, **betalat (kr)**, **progress (%)** och **saldo (kr)** per person.</p>
+    <p class="help">Visas automatiskt. Du kan dölja visningen för en person (utan att påverka beräkningen).</p>
 
     <div class="share-summary">
       <div>Delad summa (fasta+rörliga): <strong id="sharedTotal">0 kr</strong></div>
@@ -212,6 +215,14 @@
     </div>
 
     <div class="share-people" id="sharePeople"></div>
+  </section>
+
+  <section class="sec audit">
+    <h2>Avstämning (Budget vs Utfallet)</h2>
+    <div id="auditWrap">
+      <p class="help">Stäng månaden för att låsa utfallet. Här visas jämförelse per sektion och total, samt de rader som har budget.</p>
+      <div id="auditTable"></div>
+    </div>
   </section>
 
   <section class="sec year">
