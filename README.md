@@ -1,15 +1,13 @@
-# Hushållsbudget v11 – Samlad release (1,2,3,4)
+# Hushållsbudget v11.2 – Budgetläge & 🎯 rad‑knapp
 
-**Nytt:**
-1) **Auto‑fördelning** – visas alltid. Per person kan du **dölja visning** (👁), utan att påverka beräkningen.
-2) **Budget vs Utfallet** – **Budgetmål per rad** + **Avstämning**. Stäng månaden för snapshot, se avvikelse i kr & % per sektion/total och alla rader med budget.
-3) **Budgetmål per rad** – fält **🎯 Budget** på varje rad, live‑progress (grön/gul/röd) + text `Utfallet | Avvikelse`.
-4) **Per‑rad betalningar** – knapp **💳 Betalningar** på varje rad. Fyll kr per person, auto‑fördela enligt löner, nollställ, validera mot radbelopp (ON/OFF). Månads‑panelen visar **summa per person** från raderna.
-
-**Dessutom:** egna rader med auto‑ikon, dölj basrader, 🔗 delning, rad‑chips, dashboard, CSV/PDF, dark mode, tips, gamification, PWA/offline.
+**Nytt i v11.2:**
+- **Budgetläge (global ON/OFF)**: tänd/släck alla budgetfält och Avstämning med en knapp i headern.
+- **🎯 Budget‑knapp per rad**: välj vilka rader som ingår i budgeten. När OFF döljs budget‑UI på raden och raden exkluderas från budgetsumma/avstämning.
+- **Allt annat från v11**: auto‑fördelning, per‑rad betalningar, budget per rad, snapshot/stäng månad, CSV/PDF, dark mode, PWA.
+- **Anti‑zoom fortsätter gälla** (≥16px inputs + `maximum-scale=1`).
 
 ## Publicera
-1. Skapa repo (t.ex. `budget-pwa-v11`).
+1. Skapa repo (t.ex. `budget-pwa-v11.2`).
 2. Ladda upp allt till `main`.
 3. Settings → Pages → Source = **GitHub Actions**.
-4. URL: `https://<ditt‑användarnamn>.github.io/budget-pwa-v11/`.
+4. URL: `https://<ditt‑användarnamn>.github.io/budget-pwa-v11.2/`.
