@@ -3,37 +3,86 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>Hushållsbudget v11.2.1</title>
+  <title>Hushållsbudget v11.3</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#1f4e79" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="icon" sizes="192x192" href="icons/zahnere-192.png">
   <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 </head>
 <body>
 <header>
   <div class="title">
-    <h1>Hushållsbudget <span class="pill">v11.2.1</span></h1>
-    <p class="subtitle">Fix: 🎯 rad‑knappar fungerar oavsett globalt budgetläge</p>
+    <h1>Hushållsbudget <span class="pill">v11.3</span></h1>
+    <p class="subtitle">Default: Globalt Budgetläge = ON, 🎯 per rad = OFF</p>
   </div>
   <div class="header-actions">
-    <button id="budgetModeToggle" class="secondary" aria-label="Växla budgetläge">🎯 Budgetläge: OFF</button>
+    <button id="darkToggle" aria-label="Växla mörkt läge">🌙</button>
+    <button id="budgetModeToggle" class="secondary" aria-label="Växla budgetläge">🎯 Budgetläge: ON</button>
   </div>
 </header>
 
+<nav class="tabs" aria-label="Månadsflikar">
+  <div class="year-picker">
+    <label for="year">År</label>
+    <select id="year">
+      <option value="2025" selected>2025</option><option value="2026" >2026</option><option value="2027" >2027</option><option value="2028" >2028</option><option value="2029" >2029</option><option value="2030" >2030</option>
+    </select>
+  </div>
+  <div class="month-buttons">
+    <button data-month="01" class="active">Jan</button>
+    <button data-month="02">Feb</button>
+    <button data-month="03">Mar</button>
+    <button data-month="04">Apr</button>
+    <button data-month="05">Maj</button>
+    <button data-month="06">Jun</button>
+    <button data-month="07">Jul</button>
+    <button data-month="08">Aug</button>
+    <button data-month="09">Sep</button>
+    <button data-month="10">Okt</button>
+    <button data-month="11">Nov</button>
+    <button data-month="12">Dec</button>
+  </div>
+  <div class="tab-actions">
+    <button id="copyPrevBtn" class="secondary">Kopiera föreg. månad</button>
+    <button id="resetMonthBtn" class="secondary danger">Rensa aktuell månad</button>
+  </div>
+</nav>
+
 <main>
   <section class="sec fixed">
-    <h2>Exempelrad</h2>
+    <h2>Fasta utgifter</h2>
     <div class="grid" id="fixedBaseGrid">
-      <label class="cat" data-id="boende">🏠 Hyra/Bolån
-        <input id="boende" type="text" inputmode="decimal">
-        <div class="row-ctl">
-          <button class="budgetCat" title="Budget ON/OFF">🎯</button>
-        </div>
-        <div class="row-extra">
-          <span class="budget-wrap">🎯 Budget <input class="budget" type="text" inputmode="decimal" placeholder="kr"></span>
-          <div class="row-budget"><div class="bar"><div></div></div><small class="txt">—</small></div>
-        </div>
-      </label>
+      <label class="cat" data-id="boende">🏠 Hyra/Bolån<input id="boende" type="text" inputmode="decimal"><div class="row-ctl"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button><button class="payCat" title="Betalningar">💳</button><button class="budgetCat" title="Budget ON/OFF">🎯</button></div><div class="row-extra"><span class="budget-wrap">🎯 Budget <input class="budget" type="text" inputmode="decimal" placeholder="kr"></span><div class="row-budget"><div class="bar"><div></div></div><small class="txt">—</small></div></div></label>
+      <label class="cat" data-id="bredband">🌐 Bredband<input id="bredband" type="text" inputmode="decimal"><div class="row-ctl"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button><button class="payCat" title="Betalningar">💳</button><button class="budgetCat" title="Budget ON/OFF">🎯</button></div><div class="row-extra"><span class="budget-wrap">🎯 Budget <input class="budget" type="text" inputmode="decimal" placeholder="kr"></span><div class="row-budget"><div class="bar"><div></div></div><small class="txt">—</small></div></div></label>
+      <label class="cat" data-id="telefoni">📞 Telefoni<input id="telefoni" type="text" inputmode="decimal"><div class="row-ctl"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button><button class="payCat" title="Betalningar">💳</button><button class="budgetCat" title="Budget ON/OFF">🎯</button></div><div class="row-extra"><span class="budget-wrap">🎯 Budget <input class="budget" type="text" inputmode="decimal" placeholder="kr"></span><div class="row-budget"><div class="bar"><div></div></div><small class="txt">—</small></div></div></label>
+      <label class="cat" data-id="fackforbund">🧰 Fackförbund<input id="fackforbund" type="text" inputmode="decimal"><div class="row-ctl"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button><button class="payCat" title="Betalningar">💳</button><button class="budgetCat" title="Budget ON/OFF">🎯</button></div><div class="row-extra"><span class="budget-wrap">🎯 Budget <input class="budget" type="text" inputmode="decimal" placeholder="kr"></span><div class="row-budget"><div class="bar"><div></div></div><small class="txt">—</small></div></div></label>
+    </div>
+  </section>
+
+  <section class="sec var">
+    <h2>Rörliga utgifter</h2>
+    <div class="grid" id="varBaseGrid">
+      <label class="cat" data-id="mat">🛒 Mat<input id="mat" type="text" inputmode="decimal"><div class="row-ctl"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button><button class="payCat" title="Betalningar">💳</button><button class="budgetCat" title="Budget ON/OFF">🎯</button></div><div class="row-extra"><span class="budget-wrap">🎯 Budget <input class="budget" type="text" inputmode="decimal" placeholder="kr"></span><div class="row-budget"><div class="bar"><div></div></div><small class="txt">—</small></div></div></label>
+      <label class="cat" data-id="energi">⚡ El/Värme<input id="energi" type="text" inputmode="decimal"><div class="row-ctl"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button><button class="payCat" title="Betalningar">💳</button><button class="budgetCat" title="Budget ON/OFF">🎯</button></div><div class="row-extra"><span class="budget-wrap">🎯 Budget <input class="budget" type="text" inputmode="decimal" placeholder="kr"></span><div class="row-budget"><div class="bar"><div></div></div><small class="txt">—</small></div></div></label>
+    </div>
+  </section>
+
+  <section class="sec res">
+    <h2>Resultat</h2>
+    <div class="result">Överskott/Underskott: <span id="resultat">0 kr</span></div>
+    <div class="actions">
+      <button id="csvBtn" class="secondary">Exportera månad‑CSV</button>
+      <button id="pdfBtn">Exportera PDF</button>
     </div>
   </section>
 </main>
+
+<footer>
+  <small>Data sparas lokalt och fungerar offline. Installera som app via Safari → Dela → Lägg till på hemskärmen.</small>
+</footer>
 
 <script src="script.js"></script>
 </body>
