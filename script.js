@@ -1,8 +1,8 @@
-// v12.1 (felfri) – basrader återställda, robust knappar, deletable custom rows, nattläge
+// v12.2 – fix månader + knappar + dashboard (diagram + toppsumma)
 // Storage keys
 const CTX_KEY='budget_ctx'; const PREFS_KEY='budget_prefs'; const BUDGET_KEY='budget_rows'; const HIDDEN_KEY='budget_hidden'; const SHARED_KEY='budget_shared'; const VIEWPREFS_KEY='budget_viewPrefs'; const ROWPAID_KEY='budget_rowPaid'; const SNAPSHOT_KEY='budget_snapshot';
 const keyNeutral=(y,m)=>`budget_${y}-${m}`; const key112=(y,m)=>`budgetV112_${y}-${m}`; const key113=(y,m)=>`budgetV113_${y}-${m}`;
-let currentMonth='01';
+let currentMonth='01'; let currentStore='neutral';
 
 // Utils
 const fmtKr=new Intl.NumberFormat('sv-SE',{style:'currency',currency:'SEK',maximumFractionDigits:0}); const kr=n=>fmtKr.format(Math.round(n||0));
@@ -31,8 +31,9 @@ function ensureDefaults(){ const p=getPrefs(); if(p.budgetMode===undefined){ p.b
   const b=getBudget(); b.rows=b.rows||{}; b.rowsMode=b.rowsMode||{};
   document.querySelectorAll('label.cat, label.custom').forEach(l=>{ const id=l.dataset.id; if(!(id in b.rowsMode)) b.rowsMode[id]=false; }); setBudget(b); }
 
-// Month storage – best source
-function readBestMonth(y,m){ const keys=[keyNeutral(y,m),key113(y,m),key112(y,m)]; let best=null; keys.forEach(k=>{ const raw=localStorage.getItem(k); if(!raw) return; try{ const d=JSON.parse(raw); const richness = JSON.stringify(d).length + Object.keys(d||{}).length*10; if(!best || richness>(best.richness||0)){ best={key:k,data:d,richness} } }catch{} }); return best }
+// Month storage – best source + dual write
+function readBestMonth(y,m){ const keys=[keyNeutral(y,m),key113(y,m),key112(y,m)]; let best=null; keys.forEach(k=>{ const raw=localStorage.getItem(k); if(!raw) return; try{ const d=JSON.parse(raw); const richness = JSON.stringify(d).length + Object.keys(d||{}).length*10; const mode = k.includes('V113')? 'v113' : k.includes('V112')? 'v112' : 'neutral'; if(!best || richness>(best.richness||0)){ best={key:k,data:d,richness,mode} } }catch{} }); return best }
+function saveMonthPackage(y,m,data){ const neutralKey=keyNeutral(y,m); localStorage.setItem(neutralKey, JSON.stringify(data)); if(currentStore && currentStore!=='neutral'){ const otherKey = currentStore==='v113'? key113(y,m) : key112(y,m); localStorage.setItem(otherKey, JSON.stringify(data)); } }
 
 // People + focus-clear
 function defaultPersons(){ return [{name:'', salary:''}] }
@@ -40,7 +41,7 @@ function readPersons(){ return [...document.querySelectorAll('.person-card')].ma
 function renderPersons(list){ const grid=document.getElementById('personGrid'); grid.innerHTML=''; (list&&list.length? list: defaultPersons()).forEach((p,i)=> addPersonCard(p.name,p.salary, i===0)); updateSharesUI(true); }
 function addPersonCard(name='', salary='', isPrimary=false){ const grid=document.getElementById('personGrid'); const card=document.createElement('div'); card.className='person-card'; card.innerHTML=`<div class="head"><span class="ico">${isPrimary?'🧑':'👤'}</span><input class="name focus-clear" data-placeholder="Namn" type="text" placeholder="Namn" value="${name}"></div><input class="salary focus-clear" data-placeholder="Lön" type="text" inputmode="decimal" placeholder="Lön" value="${salary}"><button class="del" ${isPrimary?'disabled':''} title="Ta bort">🗑️</button>`; const nameEl=card.querySelector('.name'); const salEl=card.querySelector('.salary'); [nameEl,salEl].forEach(el=>{ el.addEventListener('focus', focusClearOnFocus); el.addEventListener('blur', focusClearOnBlur); }); nameEl.addEventListener('input',()=>{ calc(); scheduleSave(); updateSharesUI(true); }); salEl.addEventListener('input',()=>{ calc(); scheduleSave(); updateSharesUI(true); }); card.querySelector('.del').addEventListener('click',()=>{ if(!isPrimary){ card.remove(); calc(); scheduleSave(); updateSharesUI(true); }}); grid.appendChild(card); }
 function focusClearOnFocus(e){ const el=e.target; const ph=el.getAttribute('data-placeholder')||''; if(el.value===ph || el.value==='') { el.value=''; el.setSelectionRange?.(0,0); } }
-function focusClearOnBlur(e){ /* keep empty if user leaves it blank */ }
+function focusClearOnBlur(e){ /* keep empty */ }
 
 // Budget toggles
 function isRowBudgetOn(id){ const b=getBudget(); return !!((b.rowsMode||{})[id]) }
@@ -53,7 +54,7 @@ function readRowBudget(label){ const inp=label.querySelector('.budget'); return 
 function updateRowBudgetUI(label){ const on=!!getPrefs().budgetMode; const id=label.dataset.id; const rowOn=isRowBudgetOn(id); const show = on && rowOn; const box=label.querySelector('.row-budget'); if(!box) return; const budget=readRowBudget(label); const amountEl=document.getElementById(id) || label.querySelector('.c-val'); const val=parseDec(amountEl?.value||''); const bar=box.querySelector('.bar>div'); const txt=box.querySelector('.txt'); if(!show || !budget){ bar.style.width='0%'; box.classList.remove('over','near'); txt.textContent='—'; return } const pct = Math.min(150, Math.round(val*100/budget)); bar.style.width=pct+'%'; box.classList.remove('over','near'); if(pct>100) box.classList.add('over'); else if(pct>=90) box.classList.add('near'); const diff=val-budget; const pctDiff=budget>0? ((val/budget-1)*100):0; txt.textContent=`Utfallet: ${kr(val)} | Avvikelse: ${(diff>=0?'+':'−')}${kr(Math.abs(diff))} (${pctDiff.toFixed(1)}%)`; }
 function updateAllRowBudgets(){ document.querySelectorAll('label.cat').forEach(updateRowBudgetUI); document.querySelectorAll('label.custom').forEach(updateRowBudgetUI); }
 
-// Row buttons via event delegation, including delete for custom rows
+// Row buttons via event delegation + delete for custom rows
 addEventListener('click', (e)=>{
   const label = e.target.closest('label.cat, label.custom');
   if(!label) return;
@@ -80,7 +81,7 @@ function updateRowShare(label){ const hidden=getHidden(); const id=label.dataset
   const persons=readPersons(); const total=persons.reduce((s,p)=> s+(parseDec(p.salary)||0),0); const sr=ensureSplitRow(label); sr.innerHTML=''; if(!shared || amount<=0 || total<=0){ sr.style.display='none'; return } sr.style.display='flex'; const hiddenPersons=getHiddenPersons(); persons.filter(p=> !hiddenPersons.includes(p.name||''))?.forEach(p=>{ const share = amount * ( (parseDec(p.salary)||0) / total ); const pill=document.createElement('span'); pill.className='split-pill'; pill.textContent=`${p.name||'Person'}: ${kr(share)}`; sr.appendChild(pill); }) }
 function updateAllRowShares(){ document.querySelectorAll('label.cat').forEach(updateRowShare); document.querySelectorAll('label.custom').forEach(updateRowShare); }
 
-// Calc helpers & totals
+// Calc + dashboard
 function n(id){const el=document.getElementById(id); return parseDec(el?el.value:'') }
 function sumSection(ids){ const hidden=getHidden(); return ids.reduce((s,id)=> s + (hidden.includes(id)?0:n(id)),0) }
 function sumCustom(section){ const gridId=section==='fixed'?'fixedBaseGrid':section==='var'?'varBaseGrid':'saveBaseGrid'; return [...document.querySelectorAll(`#${gridId} label.custom`)].reduce((s,l)=> s+parseDec(l.querySelector('.c-val')?.value||''),0) }
@@ -96,7 +97,13 @@ function calc(){
   const vari = sumSection(['mat','hushall','klader','nojen','halsa','energi','ror_ovrigt']) + fordon + sumCustom('var'); setText('sum_var', kr(vari));
   const spar = sumSection(['spar1','spar2','spar3','spar4','spar5','spar6','skuld']) + sumCustom('save'); setText('sum_spar', kr(spar));
   const res = income - fixed - vari - spar; setText('resultat', kr(res));
+  updateDash(income, salaries, fixed, vari, spar, res);
+  drawTopPie(fixed, vari, spar);
   updateAllRowShares(); updateAllRowBudgets(); updateSharesUI(); renderAudit(); updateYearSummary(); }
+
+function updateDash(income, salaries, fixed, vari, spar, res){ setText('cardIncome', kr(income)); setText('cardSalary', kr(salaries)); setText('cardIncomeOther', kr(income - salaries)); setText('cardFixed', kr(fixed)); setText('cardVar', kr(vari)); setText('cardSave', kr(spar)); setText('cardRes', kr(res)); const leftPct = income>0? Math.max(0, Math.min(100, Math.round((income - (fixed+vari+spar))*100/income)) ):0; const bar=$('#leftBar'); if(bar) bar.style.width=leftPct+'%'; setText('cardLeftPct', leftPct+'%'); }
+
+let pieTop; function drawTopPie(fixed, vari, spar){ try{ const ctx=document.getElementById('pieTop'); if(!ctx) return; const data={ labels:['Fasta','Rörliga','Spar/Skuld'], datasets:[{ data:[ fixed, vari, spar ], backgroundColor:['#f59e0b','#ef4444','#22c55e']}]}; if(pieTop) pieTop.destroy(); pieTop=new Chart(ctx,{type:'pie', data, options:{plugins:{legend:{position:'bottom'}}}});}catch{} }
 
 // Year summary
 function getMonthTotals(y,m){ const found=readBestMonth(y,m); if(!found) return {income:0,fixed:0,var:0,spar:0,res:0}; try{ const d=found.data; const dec=x=>parseDec(d[x]); const hidden=d['_hidden']||[]; const H=id=> hidden.includes(id)?0:dec(id); const persons=(d['_persons']||[{name:'',salary:0}]).reduce((s,p)=> s+(parseDec(p.salary)||0),0); const income = persons + dec('formaner') + dec('barnbidrag') + dec('ink_ovrigt'); const fixed = (H('boende')+H('bredband')+H('telefoni')+H('barnomsorg1')+H('barnomsorg2')+H('fackforbund')) + (H('personfors')+H('barnfors')+H('djurfors')+H('hemfors')+H('bilfors')+H('fors_ovrigt')) + (H('stream_netflix')+H('stream_spotify')+H('stream_hbo')+H('stream_ovrigt1')+H('stream_ovrigt2')) + (d['_fixedCustom']||[]).reduce((s,c)=> s+(parseDec(c.value)||0),0); const vari = (H('mat')+H('hushall')+H('klader')+H('nojen')+H('halsa')+H('energi')+H('ror_ovrigt')) + (H('bransle')+H('service')+H('skatt')+H('parkering')+H('fordon_ovrigt')) + (d['_varCustom']||[]).reduce((s,c)=> s+(parseDec(c.value)||0),0); const spar = (H('spar1')+H('spar2')+H('spar3')+H('spar4')+H('spar5')+H('spar6')+H('skuld')) + (d['_saveCustom']||[]).reduce((s,c)=> s+(parseDec(c.value)||0),0); const res = income - fixed - vari - spar; return {income,fixed,var:vari,spar,res}; }catch{ return {income:0,fixed:0,var:0,spar:0,res:0} } }
@@ -120,26 +127,28 @@ async function exportPDF(){ const { jsPDF } = window.jspdf; const doc = new jsPD
 
 // Save/Load
 let saveTimer=null; const scheduleSave=()=>{ clearTimeout(saveTimer); saveTimer=setTimeout(()=>{ saveMonth(); saveCtx(); },300) };
-function saveMonth(){ const ids=['period','namn','formaner','barnbidrag','ink_ovrigt','boende','bredband','telefoni','barnomsorg1','barnomsorg2','fackforbund','personfors','barnfors','djurfors','hemfors','bilfors','fors_ovrigt','stream_netflix','stream_spotify','stream_hbo','stream_ovrigt1','stream_ovrigt2','mat','hushall','klader','nojen','halsa','energi','ror_ovrigt','bransle','service','skatt','parkering','fordon_ovrigt','spar1','spar2','spar3','spar4','spar5','spar6','skuld']; const d={}; ids.forEach(id=>{ const el=document.getElementById(id); if(el) d[id]=el.value }); d['_persons']=readPersons(); d['_fixedCustom']=readCustom('fixed'); d['_varCustom']=readCustom('var'); d['_saveCustom']=readCustom('save'); d['_hidden']=getHidden(); d['_shared']=getShared(); d['_viewPrefs']=getViewPrefs(); d['_rowPaid']=getRowPaid(); d['_budget']=getBudget(); d['_snapshot']=getSnapshot(); d['_prefs']=getPrefs(); localStorage.setItem(keyNeutral(Y(), currentMonth), JSON.stringify(d)); }
-function saveCtx(){ localStorage.setItem(CTX_KEY, JSON.stringify({y:Y(), m:currentMonth})) }
+function saveMonth(){ const ids=['period','namn','formaner','barnbidrag','ink_ovrigt','boende','bredband','telefoni','barnomsorg1','barnomsorg2','fackforbund','personfors','barnfors','djurfors','hemfors','bilfors','fors_ovrigt','stream_netflix','stream_spotify','stream_hbo','stream_ovrigt1','stream_ovrigt2','mat','hushall','klader','nojen','halsa','energi','ror_ovrigt','bransle','service','skatt','parkering','fordon_ovrigt','spar1','spar2','spar3','spar4','spar5','spar6','skuld']; const d={}; ids.forEach(id=>{ const el=document.getElementById(id); if(el) d[id]=el.value }); d['_persons']=readPersons(); d['_fixedCustom']=readCustom('fixed'); d['_varCustom']=readCustom('var'); d['_saveCustom']=readCustom('save'); d['_hidden']=getHidden(); d['_shared']=getShared(); d['_viewPrefs']=getViewPrefs(); d['_rowPaid']=getRowPaid(); d['_budget']=getBudget(); d['_snapshot']=getSnapshot(); d['_prefs']=getPrefs(); saveMonthPackage(Y(), currentMonth, d); }
+function saveCtx(){ localStorage.setItem(CTX_KEY, JSON.stringify({y:Y(), m:currentMonth, store:currentStore})) }
 function readCustom(section){ const gridId=section==='fixed'?'fixedBaseGrid':section==='var'?'varBaseGrid':'saveBaseGrid'; return [...document.querySelectorAll(`#${gridId} label.custom`)].map(l=>({ name:l.querySelector('.c-name')?.value||'', value: parseDec(l.querySelector('.c-val')?.value||''), share: l.classList.contains('share'), id:l.dataset.id, section })) }
 
 function loadMonth(m){ currentMonth=m; document.querySelectorAll('.month-buttons button').forEach(b=>b.classList.toggle('active',b.dataset.month===m));
   const ids=['period','namn','formaner','barnbidrag','ink_ovrigt','boende','bredband','telefoni','barnomsorg1','barnomsorg2','fackforbund','personfors','barnfors','djurfors','hemfors','bilfors','fors_ovrigt','stream_netflix','stream_spotify','stream_hbo','stream_ovrigt1','stream_ovrigt2','mat','hushall','klader','nojen','halsa','energi','ror_ovrigt','bransle','service','skatt','parkering','fordon_ovrigt','spar1','spar2','spar3','spar4','spar5','spar6','skuld']; ids.forEach(id=>{ const el=document.getElementById(id); if(el) el.value='' }); ['fixedBaseGrid','varBaseGrid','saveBaseGrid'].forEach(g=>{ document.querySelectorAll(`#${g} label.custom`).forEach(n=>n.remove()); });
   const found=readBestMonth(Y(), m);
-  if(found){ try{ const d=found.data; ids.forEach(id=>{ const el=document.getElementById(id); if(el && d[id]!==undefined) el.value=d[id] }); renderPersons(d['_persons']&&d['_persons'].length? d['_persons']: defaultPersons()); (d['_fixedCustom']||[]).forEach(c=>{ const l=makeCustomLabel('fixed', c.name, c.value, !!c.share); document.getElementById('fixedBaseGrid').appendChild(l); }); (d['_varCustom']||[]).forEach(c=>{ const l=makeCustomLabel('var', c.name, c.value, !!c.share); document.getElementById('varBaseGrid').appendChild(l); }); (d['_saveCustom']||[]).forEach(c=>{ const l=makeCustomLabel('save', c.name, c.value, !!c.share); document.getElementById('saveBaseGrid').appendChild(l); }); if(d['_hidden']) setHidden(d['_hidden']); if(d['_shared']) setShared(d['_shared']); if(d['_viewPrefs']) setViewPrefs(d['_viewPrefs']); if(d['_rowPaid']) setRowPaid(d['_rowPaid']); if(d['_budget']) setBudget(d['_budget']); if(d['_snapshot']) setSnapshot(d['_snapshot']); if(d['_prefs']) setPrefs(d['_prefs']); toast('Data lästes'); }catch{}
-  } else { renderPersons(defaultPersons()); }
-  ensureDefaults(); applyBudgetVisibility(); calc(); updatePeriod(); updateYearSummary(); drawPie(); updateSharesUI(true); updateAllRowShares(); updateAllRowBudgets(); renderAudit(); saveCtx(); }
+  if(found){ try{ const d=found.data; currentStore=found.mode||'neutral'; ids.forEach(id=>{ const el=document.getElementById(id); if(el && d[id]!==undefined) el.value=d[id] }); renderPersons(d['_persons']&&d['_persons'].length? d['_persons']: defaultPersons()); (d['_fixedCustom']||[]).forEach(c=>{ const l=makeCustomLabel('fixed', c.name, c.value, !!c.share); document.getElementById('fixedBaseGrid').appendChild(l); }); (d['_varCustom']||[]).forEach(c=>{ const l=makeCustomLabel('var', c.name, c.value, !!c.share); document.getElementById('varBaseGrid').appendChild(l); }); (d['_saveCustom']||[]).forEach(c=>{ const l=makeCustomLabel('save', c.name, c.value, !!c.share); document.getElementById('saveBaseGrid').appendChild(l); }); if(d['_hidden']) setHidden(d['_hidden']); if(d['_shared']) setShared(d['_shared']); if(d['_viewPrefs']) setViewPrefs(d['_viewPrefs']); if(d['_rowPaid']) setRowPaid(d['_rowPaid']); if(d['_budget']) setBudget(d['_budget']); if(d['_snapshot']) setSnapshot(d['_snapshot']); if(d['_prefs']) setPrefs(d['_prefs']); toast(`Data lästes från ${currentStore.toUpperCase()}`); }catch{}
+  } else { currentStore='neutral'; renderPersons(defaultPersons()); }
+  ensureDefaults(); applyBudgetVisibility(); calc(); updatePeriod(); updateYearSummary(); bindMonthButtonsIfNeeded(); saveCtx(); }
 
-function resetMonth(){ ['fixedBaseGrid','varBaseGrid','saveBaseGrid'].forEach(g=>{ document.querySelectorAll(`#${g} label.custom`).forEach(n=>n.remove()); }); renderPersons(defaultPersons()); setViewPrefs({hiddenPersons:[]}); setRowPaid({}); setSnapshot(null); saveMonth(); calc(); drawPie(); updateSharesUI(true); updateAllRowShares(); applyBudgetVisibility(); updateAllRowBudgets(); renderAudit(); }
+function bindMonthButtonsIfNeeded(){ document.querySelectorAll('.month-buttons button').forEach(btn=>{ if(!btn._bound){ btn.addEventListener('click',()=>{ loadMonth(btn.dataset.month); scheduleSave(); }); btn._bound=true; } }) }
+
+function resetMonth(){ ['fixedBaseGrid','varBaseGrid','saveBaseGrid'].forEach(g=>{ document.querySelectorAll(`#${g} label.custom`).forEach(n=>n.remove()); }); renderPersons(defaultPersons()); setViewPrefs({hiddenPersons:[]}); setRowPaid({}); setSnapshot(null); saveMonth(); calc(); drawTopPie(0,0,0); updateSharesUI(true); updateAllRowShares(); applyBudgetVisibility(); updateAllRowBudgets(); renderAudit(); }
 function copyPrev(){ const n=parseInt(currentMonth,10); const pm=n>1? String(n-1).padStart(2,'0'):null; if(!pm) return alert('Ingen föregående månad'); const found=readBestMonth(Y(), pm); if(!found) return alert('Föregående månad saknar data'); try{ const d=found.data; ['fixedBaseGrid','varBaseGrid','saveBaseGrid'].forEach(g=>{ document.querySelectorAll(`#${g} label.custom`).forEach(n=>n.remove()); }); renderPersons(defaultPersons()); Object.keys(d).forEach(id=>{ const el=document.getElementById(id); if(el) el.value=d[id]||'' }); renderPersons(d['_persons']&&d['_persons'].length? d['_persons']: defaultPersons()); (d['_fixedCustom']||[]).forEach(c=>{ const l=makeCustomLabel('fixed', c.name, c.value, !!c.share); document.getElementById('fixedBaseGrid').appendChild(l); }); (d['_varCustom']||[]).forEach(c=>{ const l=makeCustomLabel('var', c.name, c.value, !!c.share); document.getElementById('varBaseGrid').appendChild(l); }); (d['_saveCustom']||[]).forEach(c=>{ const l=makeCustomLabel('save', c.name, c.value, !!c.share); document.getElementById('saveBaseGrid').appendChild(l); }); if(d['_hidden']) setHidden(d['_hidden']); if(d['_shared']) setShared(d['_shared']); if(d['_viewPrefs']) setViewPrefs(d['_viewPrefs']); if(d['_rowPaid']) setRowPaid(d['_rowPaid']); if(d['_budget']) setBudget(d['_budget']); if(d['_snapshot']) setSnapshot(d['_snapshot']); if(d['_prefs']) setPrefs(d['_prefs']); ensureDefaults(); calc(); scheduleSave(); updateSharesUI(true); applyBudgetVisibility(); updateAllRowShares(); updateAllRowBudgets(); renderAudit(); toast(`Kopierade från ${pm}`); }catch{} }
 
-// Chart
-let pie; function drawPie(){ try{ const ctx=document.getElementById('pie'); if(!ctx) return; const data={ labels:['Fasta','Rörliga','Spar/Skuld'], datasets:[{ data:[ parseInt(document.getElementById('sum_fixed').textContent.replace(/[^0-9\-]/g,''))||0, parseInt(document.getElementById('sum_var').textContent.replace(/[^0-9\-]/g,''))||0, parseInt(document.getElementById('sum_spar').textContent.replace(/[^0-9\-]/g,''))||0 ], backgroundColor:['#f59e0b','#ef4444','#22c55e']}]}; if(pie) pie.destroy(); pie=new Chart(ctx,{type:'pie', data, options:{plugins:{legend:{position:'bottom'}}}});}catch{}}
+// Chart fallback (unused: pieTop handled)
+function drawPie(){ /* legacy hook */ }
 
 function updatePeriod(){ const names={'01':'Jan','02':'Feb','03':'Mar','04':'Apr','05':'Maj','06':'Jun','07':'Jul','08':'Aug','09':'Sep','10':'Okt','11':'Nov','12':'Dec'}; const el=document.getElementById('period'); if(el) el.value=`${names[currentMonth]} ${Y()}` }
 
-// Custom labels with delete button
+// Custom labels with delete
 let customIdSeq=0;
 function makeCustomLabel(section, name='', value='', share=false){ const label=document.createElement('label'); label.className='cat custom'; const id=`c_${section}_${++customIdSeq}`; label.dataset.id=id; label.dataset.section=section; if(share) label.classList.add('share'); const ico='🧩';
   label.innerHTML=`<div class="cat-header"><span class="ico">${ico}</span><input class="c-name focus-clear" data-placeholder="Kategori" type="text" placeholder="Kategori" value="${name}"></div>
@@ -158,6 +167,7 @@ function toggleTheme(){ const dark=document.documentElement.getAttribute('data-t
 // Init
 window.addEventListener('DOMContentLoaded',()=>{
   applyTheme();
+  bindMonthButtonsIfNeeded();
   document.getElementById('darkToggle').addEventListener('click',toggleTheme);
   document.getElementById('budgetModeToggle').addEventListener('click',()=>{ const p=getPrefs(); p.budgetMode= !(p.budgetMode); setPrefs(p); applyBudgetVisibility(); updateAllRowBudgets(); renderAudit(); scheduleSave(); });
   document.getElementById('addPersonBtn').addEventListener('click',()=>{ addPersonCard('', '', false); calc(); scheduleSave(); updateSharesUI(true); });
@@ -166,15 +176,14 @@ window.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('addSaveCustom').addEventListener('click',()=> addCustomTo('save'));
   document.getElementById('copyPrevBtn').addEventListener('click',copyPrev);
   document.getElementById('resetMonthBtn').addEventListener('click',()=>{ if(confirm('Rensa alla fält för aktuell månad?')) resetMonth(); });
-  document.getElementById('csvBtn').addEventListener('click',exportMonthCSV);
-  document.getElementById('yearCsvBtn').addEventListener('click',exportYearCSV);
-  document.getElementById('pdfBtn').addEventListener('click',exportPDF);
+  document.getElementById('csvBtn')?.addEventListener('click',exportMonthCSV);
+  document.getElementById('yearCsvBtn')?.addEventListener('click',exportYearCSV);
+  document.getElementById('pdfBtn')?.addEventListener('click',exportPDF);
   document.getElementById('year').addEventListener('change',()=>{ loadMonth(currentMonth); scheduleSave(); });
-  document.querySelectorAll('.month-buttons button').forEach(btn=> btn.addEventListener('click',()=>{ loadMonth(btn.dataset.month); scheduleSave(); }));
 
-  try{ const ctx=JSON.parse(localStorage.getItem(CTX_KEY)||'null'); if(ctx && [...document.getElementById('year').options].some(o=>o.value==ctx.y)){ document.getElementById('year').value=ctx.y; loadMonth(ctx.m); return; } }catch{}
+  try{ const ctx=JSON.parse(localStorage.getItem(CTX_KEY)||'null'); if(ctx && [...document.getElementById('year').options].some(o=>o.value==ctx.y)){ document.getElementById('year').value=ctx.y; currentStore=ctx.store||'neutral'; loadMonth(ctx.m); return; } }catch{}
   const m=String(new Date().getMonth()+1).padStart(2,'0'); loadMonth(m);
 });
 
 // Service worker
-if('serviceWorker' in navigator){ window.addEventListener('load',()=>{ navigator.serviceWorker.register('sw.js?v=12.1'); }); }
+if('serviceWorker' in navigator){ window.addEventListener('load',()=>{ navigator.serviceWorker.register('sw.js?v=12.2'); }); }

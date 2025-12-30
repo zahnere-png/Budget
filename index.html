@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <meta name="theme-color" content="#1f4e79" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <title>Hushållsbudget v12.1 (felfri)</title>
+  <title>Hushållsbudget v12.2 (felfri + dashboard)</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <link rel="icon" sizes="192x192" href="icons/budget-192.png">
@@ -16,14 +16,45 @@
 <body>
 <header>
   <div class="title">
-    <h1>Hushållsbudget <span class="pill">v12.1</span></h1>
-    <p class="subtitle">Felfri: basrader återställda • knappar robusta • ta bort egna rader • nattläge</p>
+    <h1>Hushållsbudget <span class="pill">v12.2</span></h1>
+    <p class="subtitle">Fix: månader • knappar • dashboard (diagram + toppsumma)</p>
   </div>
   <div class="header-actions">
     <button id="darkToggle" aria-label="Växla mörkt läge">🌙</button>
     <button id="budgetModeToggle" class="secondary" aria-label="Växla budgetläge">🎯 Budgetläge: ON</button>
   </div>
 </header>
+
+<!-- DASHBOARD TOP -->
+<section class="dash">
+  <div class="cards">
+    <div class="card">
+      <h3>Inkomster</h3>
+      <div class="progress-wrap"><div class="progress-label"><span>Summa</span><span id="cardIncome">0 kr</span></div></div>
+      <ul class="kv">
+        <li><span>Löner</span><strong id="cardSalary">0 kr</strong></li>
+        <li><span>Övrigt</span><strong id="cardIncomeOther">0 kr</strong></li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Utgifter</h3>
+      <div class="progress-wrap">
+        <div class="progress-label"><span>Återstår av inkomster</span><span id="cardLeftPct">0%</span></div>
+        <div class="progress"><div id="leftBar"></div></div>
+      </div>
+      <ul class="kv">
+        <li><span>Fasta</span><strong id="cardFixed">0 kr</strong></li>
+        <li><span>Rörliga</span><strong id="cardVar">0 kr</strong></li>
+        <li><span>Spar/Skuld</span><strong id="cardSave">0 kr</strong></li>
+        <li class="res"><span>Resultat</span><strong id="cardRes">0 kr</strong></li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Fördelning (diagram)</h3>
+      <canvas id="pieTop" height="160"></canvas>
+    </div>
+  </div>
+</section>
 
 <nav class="tabs" aria-label="Månadsflikar">
   <div class="year-picker">
