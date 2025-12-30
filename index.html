@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Hushållsbudget v10</title>
+  <title>Hushållsbudget v10.1</title>
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#1f4e79" />
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -15,8 +15,8 @@
 <body>
 <header>
   <div class="title">
-    <h1>Hushållsbudget <span class="pill">v10</span></h1>
-    <p class="subtitle">Samlad release: egna kategorier, auto‑ikon, delning, rad‑chips & per‑person status</p>
+    <h1>Hushållsbudget <span class="pill">v10.1</span></h1>
+    <p class="subtitle">Bugfix: sparning, delning & robust kalkyl</p>
   </div>
   <div class="header-actions">
     <button id="darkToggle" aria-label="Växla mörkt läge">🌙</button>
@@ -125,7 +125,6 @@
       <label class="cat" data-id="barnomsorg2">👶 Barnomsorg 2<input id="barnomsorg2" type="text" inputmode="decimal"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button></label>
       <label class="cat" data-id="fackforbund">🧰 Fackförbund<input id="fackforbund" type="text" inputmode="decimal"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button></label>
     </div>
-
     <h3 class="sub">Försäkringar</h3>
     <div class="grid subgrid" id="fixedInsGrid">
       <label class="cat" data-id="personfors">🧑‍⚕️ Personförsäkring<input id="personfors" type="text" inputmode="decimal"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button></label>
@@ -145,6 +144,7 @@
       <label class="cat" data-id="stream_ovrigt1">➕ Övrigt 1<input id="stream_ovrigt1" type="text" inputmode="decimal"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button></label>
       <label class="cat" data-id="stream_ovrigt2">➕ Övrigt 2<input id="stream_ovrigt2" type="text" inputmode="decimal"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button></label>
     </div>
+    <div class="subtotal">Summa streaming: <span id="sum_streaming">0 kr</span></div>
 
     <div class="custom-controls"><button id="addFixedCustom" class="secondary">+ Egen fast kategori</button></div>
     <div class="total">Summa fasta utgifter: <span id="sum_fixed">0 kr</span></div>
@@ -170,6 +170,7 @@
       <label class="cat" data-id="parkering">🅿️ Parkering<input id="parkering" type="text" inputmode="decimal"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button></label>
       <label class="cat" data-id="fordon_ovrigt">➕ Övrigt fordon<input id="fordon_ovrigt" type="text" inputmode="decimal"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button></label>
     </div>
+    <div class="subtotal">Summa fordon: <span id="sum_fordon">0 kr</span></div>
 
     <div class="custom-controls"><button id="addVarCustom" class="secondary">+ Egen rörlig kategori</button></div>
     <div class="total">Summa rörliga utgifter: <span id="sum_var">0 kr</span></div>
@@ -196,7 +197,6 @@
     <div class="result">Överskott/Underskott: <span id="resultat">0 kr</span></div>
     <div class="actions">
       <button id="csvBtn" class="secondary">Exportera månad‑CSV</button>
-      <button id="yearCsvBtn" class="secondary">Exportera års‑CSV</button>
       <button id="pdfBtn">Exportera PDF</button>
     </div>
   </section>
@@ -222,6 +222,9 @@
       <div>Totala rörliga utgifter: <span id="y_var">0 kr</span></div>
       <div>Totalt sparande/skuld: <span id="y_spar">0 kr</span></div>
       <div><strong>Årsresultat:</strong> <span id="y_result">0 kr</span></div>
+    </div>
+    <div class="actions">
+      <button id="yearCsvBtn" class="secondary">Exportera års‑CSV</button>
     </div>
   </section>
 </main>
