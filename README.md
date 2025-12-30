@@ -1,24 +1,18 @@
-# Hushållsbudget v9 – PWA (GitHub Pages‑redo)
+# Hushållsbudget v9.2 – egna kategorier & dölja bas
 
-Detta paket är klart för **GitHub Pages** och PWA-installation.
-
-## Nytt i v9
-- Ny fast utgift: **Fackförbund**
-- Färgtema per sektion + ikoner (emoji) för tydlighet
-- **Cirkeldiagram + progressbar** i dashboard
-- **Tips-ruta** (roterande spartips)
-- **PDF-export** (jsPDF via CDN) + CSV (månad/år)
-- **Dark mode toggle** (lagras i localStorage)
-- **Animationer** (mjuk fade och spar-indikator)
-- **Gamification** (poäng och badges, lokalt)
-- PWA (manifest + service worker, offline)
+**Nyheter:**
+- Lägg till **egna kategorier** under Fasta, Rörliga och Spar/Skuld.
+- **Dölj valfria bas-kategorier** (👁️‑knappen) – summorna ignorerar dolda fält.
+- Behåller v9.1: en (1) lön + dynamiska betalare i hushållet.
+- Fortfarande PWA (manifest + service worker, offline), CSV/PDF, dashboard (diagram+progress), dark mode, tips, gamification.
 
 ## Publicera
-1. Skapa repo, t.ex. `budget-pwa-v9` under ditt konto.
-2. Ladda upp alla filer i denna mapp till `main` (inte ZIP).
-3. I **Settings → Pages**: välj **Source = GitHub Actions**.
-4. Efter ~1 minut har du en URL: `https://<ditt‑användarnamn>.github.io/budget-pwa-v9/`.
+1. Skapa repo (t.ex. `budget-pwa-v92`).
+2. Ladda upp allt till `main`.
+3. Settings → Pages → Source = **GitHub Actions**.
+4. URL: `https://<ditt-användarnamn>.github.io/budget-pwa-v92/`.
 
-## Installera på mobilen
-- iPhone/iPad (Safari): **Dela → Lägg till på hemskärmen**
-- Android (Chrome): “Installera app”/“Add to Home screen”
+## Användning
+- Klicka **👁️ Dölj** på en bas-kategori du inte använder.
+- Klicka **+ Lägg till egen kategori** i respektive sektion och fyll namn + belopp.
+- Allt sparas lokalt per **år/månad**, och summor/diagram uppdateras live.
