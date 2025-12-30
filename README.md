@@ -1,10 +1,24 @@
+# Hushållsbudget v9 – PWA (GitHub Pages‑redo)
 
-# Hushållsbudget – PWA (GitHub Pages)
+Detta paket är klart för **GitHub Pages** och PWA-installation.
 
-Publicering (gratis):
-1. Skapa ett **GitHub‑repo** med detta innehåll och push:a till `main`.
-2. `Settings → Pages` ska stå på **GitHub Actions**.
-3. Workflow `.github/workflows/github-pages.yml` körs automatiskt och publicerar.
-4. URL: `https://<ditt‑användarnamn>.github.io/budget-pwa/`
+## Nytt i v9
+- Ny fast utgift: **Fackförbund**
+- Färgtema per sektion + ikoner (emoji) för tydlighet
+- **Cirkeldiagram + progressbar** i dashboard
+- **Tips-ruta** (roterande spartips)
+- **PDF-export** (jsPDF via CDN) + CSV (månad/år)
+- **Dark mode toggle** (lagras i localStorage)
+- **Animationer** (mjuk fade och spar-indikator)
+- **Gamification** (poäng och badges, lokalt)
+- PWA (manifest + service worker, offline)
 
-**Obs:** GitHub Pages stöder obegränsat antal projekt‑sajter per konto och har en *soft limit* på ca **100 GB/månad** bandbredd. Se GitHub Docs.
+## Publicera
+1. Skapa repo, t.ex. `budget-pwa-v9` under ditt konto.
+2. Ladda upp alla filer i denna mapp till `main` (inte ZIP).
+3. I **Settings → Pages**: välj **Source = GitHub Actions**.
+4. Efter ~1 minut har du en URL: `https://<ditt‑användarnamn>.github.io/budget-pwa-v9/`.
+
+## Installera på mobilen
+- iPhone/iPad (Safari): **Dela → Lägg till på hemskärmen**
+- Android (Chrome): “Installera app”/“Add to Home screen”

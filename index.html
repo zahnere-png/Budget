@@ -1,116 +1,214 @@
-
 <!DOCTYPE html>
 <html lang="sv">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Hushållsbudget</title>
-  <link rel="manifest" href="manifest.webmanifest"> 
+  <title>Hushållsbudget v9</title>
+  <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#1f4e79" />
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png"> 
-  <link rel="icon" sizes="192x192" href="icons/zahnere-192.png"> 
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="icon" sizes="192x192" href="icons/zahnere-192.png">
   <link rel="stylesheet" href="styles.css" />
+  <!-- Chart.js för diagram -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <!-- jsPDF för PDF-export -->
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 </head>
 <body>
 <header>
-  <h1>Hushållsbudget</h1>
-  <p class="subtitle">Lägg till som app: Safari → Dela → Lägg till på hemskärmen</p>
+  <div class="title">
+    <h1>Hushållsbudget <span class="pill">v9</span></h1>
+    <p class="subtitle">Mer smart, mer visuell – och redo för hemskärmen</p>
+  </div>
+  <div class="header-actions">
+    <button id="darkToggle" aria-label="Växla mörkt läge">🌙</button>
+  </div>
 </header>
 
+<nav class="tabs" aria-label="Månadsflikar">
+  <div class="year-picker">
+    <label for="year">År</label>
+    <select id="year">
+      <option value="2025" selected>2025</option><option value="2026" >2026</option><option value="2027" >2027</option><option value="2028" >2028</option><option value="2029" >2029</option><option value="2030" >2030</option>
+    </select>
+  </div>
+  <div class="month-buttons">
+    <button data-month="01" class="active">Jan</button>
+    <button data-month="02">Feb</button>
+    <button data-month="03">Mar</button>
+    <button data-month="04">Apr</button>
+    <button data-month="05">Maj</button>
+    <button data-month="06">Jun</button>
+    <button data-month="07">Jul</button>
+    <button data-month="08">Aug</button>
+    <button data-month="09">Sep</button>
+    <button data-month="10">Okt</button>
+    <button data-month="11">Nov</button>
+    <button data-month="12">Dec</button>
+  </div>
+  <div class="tab-actions">
+    <button id="copyPrevBtn" class="secondary">Kopiera föreg. månad</button>
+    <button id="resetMonthBtn" class="secondary danger">Rensa aktuell månad</button>
+  </div>
+</nav>
 
 <main>
+  <section class="dash">
+    <div class="cards">
+      <div class="card">
+        <h3>Översikt</h3>
+        <div class="progress-wrap">
+          <div class="progress-label"><span>Kvar av inkomster</span><span id="leftPct">0%</span></div>
+          <div class="progress"><div id="leftBar"></div></div>
+        </div>
+        <ul class="kv">
+          <li><span>Inkomster</span><strong id="kpiIncome">0 kr</strong></li>
+          <li><span>Fasta</span><strong id="kpiFixed">0 kr</strong></li>
+          <li><span>Rörliga</span><strong id="kpiVar">0 kr</strong></li>
+          <li><span>Spar/Skuld</span><strong id="kpiSave">0 kr</strong></li>
+          <li class="res"><span>Resultat</span><strong id="kpiRes">0 kr</strong></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Fördelning</h3>
+        <canvas id="pie"></canvas>
+      </div>
+      <div class="card tips">
+        <h3>Veckans spartips</h3>
+        <p id="tipText">—</p>
+        <button id="nextTip" class="secondary">Nytt tips</button>
+      </div>
+      <div class="card gamify">
+        <h3>Din nivå</h3>
+        <div class="points"><span>Poäng:</span> <strong id="points">0</strong></div>
+        <div class="badges" id="badges"></div>
+      </div>
+    </div>
+  </section>
+
   <section class="meta">
     <div>
-      <label for="period">Period</label>
-      <input id="period" type="text" placeholder="t.ex. Jan 2026" />
+      <label for="period">🗓️ Period</label>
+      <input id="period" type="text" placeholder="t.ex. Jan 2025" />
     </div>
     <div>
-      <label for="namn">Namn</label>
+      <label for="namn">👤 Namn</label>
       <input id="namn" type="text" placeholder="Ditt namn" />
     </div>
   </section>
-  <section>
+
+  <section class="sec inc">
     <h2>Inkomster</h2>
     <div class="grid">
-      <label>Lön 1<input id="lon1" type="text" inputmode="decimal"></label>
-      <label>Lön 2<input id="lon2" type="text" inputmode="decimal"></label>
-      <label>Förmåner<input id="formaner" type="text" inputmode="decimal"></label>
-      <label>Barnbidrag / Familjeförmån<input id="barnbidrag" type="text" inputmode="decimal"></label>
-      <label>Övrigt<input id="ink_ovrigt" type="text" inputmode="decimal"></label>
+      <label>💼 Lön 1<input id="lon1" type="text" inputmode="decimal"></label>
+      <label>💼 Lön 2<input id="lon2" type="text" inputmode="decimal"></label>
+      <label>🎁 Förmåner<input id="formaner" type="text" inputmode="decimal"></label>
+      <label>👪 Barnbidrag<input id="barnbidrag" type="text" inputmode="decimal"></label>
+      <label>➕ Övrigt<input id="ink_ovrigt" type="text" inputmode="decimal"></label>
     </div>
     <div class="total">Summa inkomster: <span id="sum_income">0 kr</span></div>
   </section>
-  <section>
+
+  <section class="sec fixed">
     <h2>Fasta utgifter</h2>
     <div class="grid">
-      <label>Hyra / Bolån (inkl. parkering)<input id="boende" type="text" inputmode="decimal"></label>
-      <label>Bredband<input id="bredband" type="text" inputmode="decimal"></label>
-      <label>Telefoni<input id="telefoni" type="text" inputmode="decimal"></label>
-      <label>Barnomsorg / Skola 1<input id="barnomsorg1" type="text" inputmode="decimal"></label>
-      <label>Barnomsorg / Skola 2<input id="barnomsorg2" type="text" inputmode="decimal"></label>
+      <label>🏠 Hyra/Bolån<input id="boende" type="text" inputmode="decimal"></label>
+      <label>🌐 Bredband<input id="bredband" type="text" inputmode="decimal"></label>
+      <label>📞 Telefoni<input id="telefoni" type="text" inputmode="decimal"></label>
+      <label>👶 Barnomsorg 1<input id="barnomsorg1" type="text" inputmode="decimal"></label>
+      <label>👶 Barnomsorg 2<input id="barnomsorg2" type="text" inputmode="decimal"></label>
+      <label>🧰 Fackförbund<input id="fackforbund" type="text" inputmode="decimal"></label>
     </div>
+
     <h3 class="sub">Försäkringar</h3>
     <div class="grid subgrid">
-      <label>Personförsäkring<input id="personfors" type="text" inputmode="decimal"></label>
-      <label>Barnförsäkring<input id="barnfors" type="text" inputmode="decimal"></label>
-      <label>Djurförsäkring<input id="djurfors" type="text" inputmode="decimal"></label>
-      <label>Hemförsäkring<input id="hemfors" type="text" inputmode="decimal"></label>
-      <label>Bilförsäkring<input id="bilfors" type="text" inputmode="decimal"></label>
-      <label>Övriga försäkringar<input id="fors_ovrigt" type="text" inputmode="decimal"></label>
+      <label>🧑‍⚕️ Personförsäkring<input id="personfors" type="text" inputmode="decimal"></label>
+      <label>🧒 Barnförsäkring<input id="barnfors" type="text" inputmode="decimal"></label>
+      <label>🐾 Djurförsäkring<input id="djurfors" type="text" inputmode="decimal"></label>
+      <label>🏡 Hemförsäkring<input id="hemfors" type="text" inputmode="decimal"></label>
+      <label>🚗 Bilförsäkring<input id="bilfors" type="text" inputmode="decimal"></label>
+      <label>➕ Övrigt<input id="fors_ovrigt" type="text" inputmode="decimal"></label>
     </div>
     <div class="subtotal">Summa försäkringar: <span id="sum_fors">0 kr</span></div>
+
     <h3 class="sub">Streaming</h3>
     <div class="grid subgrid">
-      <label>Netflix<input id="stream_netflix" type="text" inputmode="decimal"></label>
-      <label>Spotify<input id="stream_spotify" type="text" inputmode="decimal"></label>
-      <label>HBO<input id="stream_hbo" type="text" inputmode="decimal"></label>
-      <label>Övrigt 1<input id="stream_ovrigt1" type="text" inputmode="decimal"></label>
-      <label>Övrigt 2<input id="stream_ovrigt2" type="text" inputmode="decimal"></label>
+      <label>🎬 Netflix<input id="stream_netflix" type="text" inputmode="decimal"></label>
+      <label>🎵 Spotify<input id="stream_spotify" type="text" inputmode="decimal"></label>
+      <label>🎬 HBO<input id="stream_hbo" type="text" inputmode="decimal"></label>
+      <label>➕ Övrigt 1<input id="stream_ovrigt1" type="text" inputmode="decimal"></label>
+      <label>➕ Övrigt 2<input id="stream_ovrigt2" type="text" inputmode="decimal"></label>
     </div>
     <div class="subtotal">Summa streaming: <span id="sum_streaming">0 kr</span></div>
+
+    <div class="total">Summa fasta utgifter: <span id="sum_fixed">0 kr</span></div>
   </section>
-  <section>
+
+  <section class="sec var">
     <h2>Rörliga utgifter</h2>
     <div class="grid">
-      <label>Mat<input id="mat" type="text" inputmode="decimal"></label>
-      <label>Hushåll / Förbrukning<input id="hushall" type="text" inputmode="decimal"></label>
-      <label>Kläder / Skor<input id="klader" type="text" inputmode="decimal"></label>
-      <label>Fritid / Nöjen<input id="nojen" type="text" inputmode="decimal"></label>
-      <label>Hälsa / Träning<input id="halsa" type="text" inputmode="decimal"></label>
-      <label>El / Värme<input id="energi" type="text" inputmode="decimal"></label>
-      <label>Övrigt<input id="ror_ovrigt" type="text" inputmode="decimal"></label>
+      <label>🛒 Mat<input id="mat" type="text" inputmode="decimal"></label>
+      <label>🧼 Hushåll<input id="hushall" type="text" inputmode="decimal"></label>
+      <label>👟 Kläder<input id="klader" type="text" inputmode="decimal"></label>
+      <label>🎉 Nöjen<input id="nojen" type="text" inputmode="decimal"></label>
+      <label>💪 Hälsa<input id="halsa" type="text" inputmode="decimal"></label>
+      <label>⚡ El/Värme<input id="energi" type="text" inputmode="decimal"></label>
+      <label>➕ Övrigt<input id="ror_ovrigt" type="text" inputmode="decimal"></label>
     </div>
+
     <h3 class="sub">Fordon</h3>
     <div class="grid subgrid">
-      <label>Bränsle<input id="bransle" type="text" inputmode="decimal"></label>
-      <label>Service/Underhåll<input id="service" type="text" inputmode="decimal"></label>
-      <label>Skatt/Besiktning<input id="skatt" type="text" inputmode="decimal"></label>
-      <label>Parkering<input id="parkering" type="text" inputmode="decimal"></label>
-      <label>Övrigt fordon<input id="fordon_ovrigt" type="text" inputmode="decimal"></label>
+      <label>⛽ Bränsle<input id="bransle" type="text" inputmode="decimal"></label>
+      <label>🛠️ Service<input id="service" type="text" inputmode="decimal"></label>
+      <label>🧾 Skatt/Besiktning<input id="skatt" type="text" inputmode="decimal"></label>
+      <label>🅿️ Parkering<input id="parkering" type="text" inputmode="decimal"></label>
+      <label>➕ Övrigt fordon<input id="fordon_ovrigt" type="text" inputmode="decimal"></label>
     </div>
     <div class="subtotal">Summa fordon: <span id="sum_fordon">0 kr</span></div>
+
+    <div class="total">Summa rörliga utgifter: <span id="sum_var">0 kr</span></div>
   </section>
-  <section>
+
+  <section class="sec save">
     <h2>Sparande & mål</h2>
     <div class="grid">
-      <label>Sparande 1<input id="spar1" type="text" inputmode="decimal"></label>
-      <label>Sparande 2<input id="spar2" type="text" inputmode="decimal"></label>
-      <label>Sparande 3<input id="spar3" type="text" inputmode="decimal"></label>
-      <label>Sparande 4<input id="spar4" type="text" inputmode="decimal"></label>
-      <label>Sparande 5<input id="spar5" type="text" inputmode="decimal"></label>
-      <label>Sparande 6<input id="spar6" type="text" inputmode="decimal"></label>
-      <label>Skuldamortering<input id="skuld" type="text" inputmode="decimal"></label>
+      <label>🐷 Sparande 1<input id="spar1" type="text" inputmode="decimal"></label>
+      <label>🐷 Sparande 2<input id="spar2" type="text" inputmode="decimal"></label>
+      <label>🐷 Sparande 3<input id="spar3" type="text" inputmode="decimal"></label>
+      <label>🐷 Sparande 4<input id="spar4" type="text" inputmode="decimal"></label>
+      <label>🐷 Sparande 5<input id="spar5" type="text" inputmode="decimal"></label>
+      <label>🐷 Sparande 6<input id="spar6" type="text" inputmode="decimal"></label>
+      <label>📉 Skuldamortering<input id="skuld" type="text" inputmode="decimal"></label>
     </div>
+    <div class="total">Summa sparande/skuld: <span id="sum_spar">0 kr</span></div>
   </section>
-  <section>
+
+  <section class="sec res">
     <h2>Resultat</h2>
     <div class="result">Överskott/Underskott: <span id="resultat">0 kr</span></div>
+    <div class="actions">
+      <button id="csvBtn" class="secondary">Exportera månad‑CSV</button>
+      <button id="yearCsvBtn" class="secondary">Exportera års‑CSV</button>
+      <button id="pdfBtn">Exportera PDF</button>
+    </div>
+  </section>
+
+  <section class="sec year">
+    <h2>Årsöversikt</h2>
+    <div class="year-summary">
+      <div>Totala inkomster: <span id="y_income">0 kr</span></div>
+      <div>Totala fasta utgifter: <span id="y_fixed">0 kr</span></div>
+      <div>Totala rörliga utgifter: <span id="y_var">0 kr</span></div>
+      <div>Totalt sparande/skuld: <span id="y_spar">0 kr</span></div>
+      <div><strong>Årsresultat:</strong> <span id="y_result">0 kr</span></div>
+    </div>
   </section>
 </main>
 
 <footer>
-  <small>Data sparas lokalt på enheten. Appen kan installeras som PWA.</small>
+  <small>Data sparas lokalt och fungerar offline. Installera som app via Safari → Dela → Lägg till på hemskärmen.</small>
 </footer>
+
 <script src="script.js"></script>
 </body>
 </html>
