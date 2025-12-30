@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>Hushållsbudget v11.3 (full)</title>
+  <title>Hushållsbudget v11.2 (full)</title>
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#1f4e79" />
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -15,12 +15,12 @@
 <body>
 <header>
   <div class="title">
-    <h1>Hushållsbudget <span class="pill">v11.3 (full)</span></h1>
-    <p class="subtitle">Default: Global 🎯 = ON, 🎯 per rad = OFF</p>
+    <h1>Hushållsbudget <span class="pill">v11.2 (full)</span></h1>
+    <p class="subtitle">Budgetläge global ON/OFF + 🎯 per rad (robust)</p>
   </div>
   <div class="header-actions">
     <button id="darkToggle" aria-label="Växla mörkt läge">🌙</button>
-    <button id="budgetModeToggle" class="secondary" aria-label="Växla budgetläge">🎯 Budgetläge: ON</button>
+    <button id="budgetModeToggle" class="secondary" aria-label="Växla budgetläge">🎯 Budgetläge: OFF</button>
   </div>
 </header>
 
@@ -77,11 +77,6 @@
         <p id="tipText">—</p>
         <button id="nextTip" class="secondary">Nytt tips</button>
       </div>
-      <div class="card gamify">
-        <h3>Din nivå</h3>
-        <div class="points"><span>Poäng:</span> <strong id="points">0</strong></div>
-        <div class="badges" id="badges"></div>
-      </div>
     </div>
   </section>
 
@@ -98,7 +93,6 @@
 
   <section class="sec inc">
     <h2>Inkomster</h2>
-
     <div class="persons">
       <h3>Huvudpersoner</h3>
       <div class="person-grid" id="personGrid"></div>
@@ -106,13 +100,11 @@
         <button id="addPersonBtn" class="secondary">+ Lägg till person</button>
       </div>
     </div>
-
     <div class="grid">
       <label>🎁 Förmåner<input id="formaner" type="text" inputmode="decimal"></label>
       <label>👪 Barnbidrag<input id="barnbidrag" type="text" inputmode="decimal"></label>
       <label>➕ Övrigt<input id="ink_ovrigt" type="text" inputmode="decimal"></label>
     </div>
-
     <div class="total">Summa inkomster: <span id="sum_income">0 kr</span></div>
   </section>
 
@@ -136,19 +128,6 @@
       <label class="cat" data-id="bilfors">🚗 Bilförsäkring<input id="bilfors" type="text" inputmode="decimal"><div class="row-ctl"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button><button class="payCat" title="Betalningar">💳</button><button class="budgetCat" title="Budget ON/OFF">🎯</button></div><div class="row-extra"><span class="budget-wrap">🎯 Budget <input class="budget" type="text" inputmode="decimal" placeholder="kr"></span><div class="row-budget"><div class="bar"><div></div></div><small class="txt">—</small></div></div></label>
       <label class="cat" data-id="fors_ovrigt">➕ Övrigt<input id="fors_ovrigt" type="text" inputmode="decimal"><div class="row-ctl"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button><button class="payCat" title="Betalningar">💳</button><button class="budgetCat" title="Budget ON/OFF">🎯</button></div><div class="row-extra"><span class="budget-wrap">🎯 Budget <input class="budget" type="text" inputmode="decimal" placeholder="kr"></span><div class="row-budget"><div class="bar"><div></div></div><small class="txt">—</small></div></div></label>
     </div>
-    <div class="subtotal">Summa försäkringar: <span id="sum_fors">0 kr</span></div>
-
-    <h3 class="sub">Streaming</h3>
-    <div class="grid subgrid" id="fixedStreamGrid">
-      <label class="cat" data-id="stream_netflix">🎬 Netflix<input id="stream_netflix" type="text" inputmode="decimal"><div class="row-ctl"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button><button class="payCat" title="Betalningar">💳</button><button class="budgetCat" title="Budget ON/OFF">🎯</button></div><div class="row-extra"><span class="budget-wrap">🎯 Budget <input class="budget" type="text" inputmode="decimal" placeholder="kr"></span><div class="row-budget"><div class="bar"><div></div></div><small class="txt">—</small></div></div></label>
-      <label class="cat" data-id="stream_spotify">🎵 Spotify<input id="stream_spotify" type="text" inputmode="decimal"><div class="row-ctl"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button><button class="payCat" title="Betalningar">💳</button><button class="budgetCat" title="Budget ON/OFF">🎯</button></div><div class="row-extra"><span class="budget-wrap">🎯 Budget <input class="budget" type="text" inputmode="decimal" placeholder="kr"></span><div class="row-budget"><div class="bar"><div></div></div><small class="txt">—</small></div></div></label>
-      <label class="cat" data-id="stream_hbo">🎬 HBO<input id="stream_hbo" type="text" inputmode="decimal"><div class="row-ctl"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button><button class="payCat" title="Betalningar">💳</button><button class="budgetCat" title="Budget ON/OFF">🎯</button></div><div class="row-extra"><span class="budget-wrap">🎯 Budget <input class="budget" type="text" inputmode="decimal" placeholder="kr"></span><div class="row-budget"><div class="bar"><div></div></div><small class="txt">—</small></div></div></label>
-      <label class="cat" data-id="stream_ovrigt1">➕ Övrigt 1<input id="stream_ovrigt1" type="text" inputmode="decimal"><div class="row-ctl"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button><button class="payCat" title="Betalningar">💳</button><button class="budgetCat" title="Budget ON/OFF">🎯</button></div><div class="row-extra"><span class="budget-wrap">🎯 Budget <input class="budget" type="text" inputmode="decimal" placeholder="kr"></span><div class="row-budget"><div class="bar"><div></div></div><small class="txt">—</small></div></div></label>
-      <label class="cat" data-id="stream_ovrigt2">➕ Övrigt 2<input id="stream_ovrigt2" type="text" inputmode="decimal"><div class="row-ctl"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button><button class="payCat" title="Betalningar">💳</button><button class="budgetCat" title="Budget ON/OFF">🎯</button></div><div class="row-extra"><span class="budget-wrap">🎯 Budget <input class="budget" type="text" inputmode="decimal" placeholder="kr"></span><div class="row-budget"><div class="bar"><div></div></div><small class="txt">—</small></div></div></label>
-    </div>
-    <div class="subtotal">Summa streaming: <span id="sum_streaming">0 kr</span></div>
-
-    <div class="custom-controls"><button id="addFixedCustom" class="secondary">+ Egen fast kategori</button></div>
     <div class="total">Summa fasta utgifter: <span id="sum_fixed">0 kr</span></div>
   </section>
 
@@ -163,18 +142,6 @@
       <label class="cat" data-id="energi">⚡ El/Värme<input id="energi" type="text" inputmode="decimal"><div class="row-ctl"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button><button class="payCat" title="Betalningar">💳</button><button class="budgetCat" title="Budget ON/OFF">🎯</button></div><div class="row-extra"><span class="budget-wrap">🎯 Budget <input class="budget" type="text" inputmode="decimal" placeholder="kr"></span><div class="row-budget"><div class="bar"><div></div></div><small class="txt">—</small></div></div></label>
       <label class="cat" data-id="ror_ovrigt">➕ Övrigt<input id="ror_ovrigt" type="text" inputmode="decimal"><div class="row-ctl"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button><button class="payCat" title="Betalningar">💳</button><button class="budgetCat" title="Budget ON/OFF">🎯</button></div><div class="row-extra"><span class="budget-wrap">🎯 Budget <input class="budget" type="text" inputmode="decimal" placeholder="kr"></span><div class="row-budget"><div class="bar"><div></div></div><small class="txt">—</small></div></div></label>
     </div>
-
-    <h3 class="sub">Fordon</h3>
-    <div class="grid subgrid" id="varFordonGrid">
-      <label class="cat" data-id="bransle">⛽ Bränsle<input id="bransle" type="text" inputmode="decimal"><div class="row-ctl"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button><button class="payCat" title="Betalningar">💳</button><button class="budgetCat" title="Budget ON/OFF">🎯</button></div><div class="row-extra"><span class="budget-wrap">🎯 Budget <input class="budget" type="text" inputmode="decimal" placeholder="kr"></span><div class="row-budget"><div class="bar"><div></div></div><small class="txt">—</small></div></div></label>
-      <label class="cat" data-id="service">🛠️ Service<input id="service" type="text" inputmode="decimal"><div class="row-ctl"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button><button class="payCat" title="Betalningar">💳</button><button class="budgetCat" title="Budget ON/OFF">🎯</button></div><div class="row-extra"><span class="budget-wrap">🎯 Budget <input class="budget" type="text" inputmode="decimal" placeholder="kr"></span><div class="row-budget"><div class="bar"><div></div></div><small class="txt">—</small></div></div></label>
-      <label class="cat" data-id="skatt">🧾 Skatt/Besiktning<input id="skatt" type="text" inputmode="decimal"><div class="row-ctl"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button><button class="payCat" title="Betalningar">💳</button><button class="budgetCat" title="Budget ON/OFF">🎯</button></div><div class="row-extra"><span class="budget-wrap">🎯 Budget <input class="budget" type="text" inputmode="decimal" placeholder="kr"></span><div class="row-budget"><div class="bar"><div></div></div><small class="txt">—</small></div></div></label>
-      <label class="cat" data-id="parkering">🅿️ Parkering<input id="parkering" type="text" inputmode="decimal"><div class="row-ctl"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button><button class="payCat" title="Betalningar">💳</button><button class="budgetCat" title="Budget ON/OFF">🎯</button></div><div class="row-extra"><span class="budget-wrap">🎯 Budget <input class="budget" type="text" inputmode="decimal" placeholder="kr"></span><div class="row-budget"><div class="bar"><div></div></div><small class="txt">—</small></div></div></label>
-      <label class="cat" data-id="fordon_ovrigt">➕ Övrigt fordon<input id="fordon_ovrigt" type="text" inputmode="decimal"><div class="row-ctl"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button><button class="payCat" title="Betalningar">💳</button><button class="budgetCat" title="Budget ON/OFF">🎯</button></div><div class="row-extra"><span class="budget-wrap">🎯 Budget <input class="budget" type="text" inputmode="decimal" placeholder="kr"></span><div class="row-budget"><div class="bar"><div></div></div><small class="txt">—</small></div></div></label>
-    </div>
-    <div class="subtotal">Summa fordon: <span id="sum_fordon">0 kr</span></div>
-
-    <div class="custom-controls"><button id="addVarCustom" class="secondary">+ Egen rörlig kategori</button></div>
     <div class="total">Summa rörliga utgifter: <span id="sum_var">0 kr</span></div>
   </section>
 
@@ -189,9 +156,18 @@
       <label class="cat" data-id="spar6">🐷 Sparande 6<input id="spar6" type="text" inputmode="decimal"><div class="row-ctl"><button class="hideCat" title="Dölj">👁️</button></div><div class="row-extra"><span class="budget-wrap">🎯 Budget <input class="budget" type="text" inputmode="decimal" placeholder="kr"></span><div class="row-budget"><div class="bar"><div></div></div><small class="txt">—</small></div></div></label>
       <label class="cat" data-id="skuld">📉 Skuldamortering<input id="skuld" type="text" inputmode="decimal"><div class="row-ctl"><button class="hideCat" title="Dölj">👁️</button></div><div class="row-extra"><span class="budget-wrap">🎯 Budget <input class="budget" type="text" inputmode="decimal" placeholder="kr"></span><div class="row-budget"><div class="bar"><div></div></div><small class="txt">—</small></div></div></label>
     </div>
-
-    <div class="custom-controls"><button id="addSaveCustom" class="secondary">+ Egen spar/skuld kategori</button></div>
     <div class="total">Summa sparande/skuld: <span id="sum_spar">0 kr</span></div>
+  </section>
+
+  <section class="sec res">
+    <h2>Resultat</h2>
+    <div class="result">Överskott/Underskott: <span id="resultat">0 kr</span></div>
+    <div class="actions">
+      <button id="csvBtn" class="secondary">Exportera månad‑CSV</button>
+      <button id="pdfBtn">Exportera PDF</button>
+      <button id="closeMonthBtn" class="secondary">Stäng månaden</button>
+      <button id="openMonthBtn" class="secondary danger">Öppna igen</button>
+    </div>
   </section>
 
   <section class="sec share">

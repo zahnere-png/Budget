@@ -1,12 +1,12 @@
-// v11.3 (full) – Defaults: global budgetMode = ON, per-row rowsMode = OFF
-const CTX_KEY='budgetV113_ctx';
-const PREFS_KEY='budgetV113_prefs'; // { budgetMode: true }
-const BUDGET_KEY='budgetV113_budget'; // { rows:{}, rowsMode:{ id:false } }
-const HIDDEN_KEY='budgetV113_hidden';
-const SHARED_KEY='budgetV113_shared';
-const VIEWPREFS_KEY='budgetV113_viewPrefs';
-const ROWPAID_KEY='budgetV113_rowPaid';
-const SNAPSHOT_KEY='budgetV113_snapshot';
+// v11.2 (full, restored) – robust budget‑knappar per rad + global budgetläge
+const CTX_KEY='budgetV112_ctx';
+const PREFS_KEY='budgetV112_prefs'; // { budgetMode: false }
+const BUDGET_KEY='budgetV112_budget'; // { rows:{}, rowsMode:{ id:true/false } }
+const HIDDEN_KEY='budgetV112_hidden';
+const SHARED_KEY='budgetV112_shared';
+const VIEWPREFS_KEY='budgetV112_viewPrefs';
+const ROWPAID_KEY='budgetV112_rowPaid';
+const SNAPSHOT_KEY='budgetV112_snapshot';
 
 const fmtKr=new Intl.NumberFormat('sv-SE',{style:'currency',currency:'SEK',maximumFractionDigits:0});
 const kr=n=>fmtKr.format(Math.round(n||0));
@@ -30,24 +30,41 @@ const setRowPaid=obj=> localStorage.setItem(ROWPAID_KEY, JSON.stringify(obj||{})
 const getSnapshot=()=>{ try{ return JSON.parse(localStorage.getItem(SNAPSHOT_KEY)||'null') }catch{ return null } };
 const setSnapshot=s=>{ if(s==null) localStorage.removeItem(SNAPSHOT_KEY); else localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(s)) };
 
-// Persons
+// Defaults setup
+function ensureDefaults(){ const p=getPrefs(); if(p.budgetMode===undefined){ p.budgetMode=false; setPrefs(p); } const b=getBudget(); b.rows=b.rows||{}; b.rowsMode=b.rowsMode||{}; // v11.2: per-rad default ON
+  document.querySelectorAll('label.cat, label.custom').forEach(l=>{ const id=l.dataset.id; if(!(id in b.rowsMode)) b.rowsMode[id]=true; }); setBudget(b); }
+
+// People
 function defaultPersons(){ return [{name:'Du', salary:0}] }
-function readPersons(){ return [...document.querySelectorAll('.person-card')].map(card=>({ name: card.querySelector('.name').value||'Du', salary: parseDec(card.querySelector('.salary').value||'') })) }
+function readPersons(){ return [...document.querySelectorAll('.person-card')].map(card=>({ name: card.querySelector('.name')?.value||'Du', salary: parseDec(card.querySelector('.salary')?.value||'') })) }
 function renderPersons(list){ const grid=document.getElementById('personGrid'); grid.innerHTML=''; (list||defaultPersons()).forEach((p,i)=> addPersonCard(p.name,p.salary, i===0)); updateSharesUI(true); }
 function addPersonCard(name='Du', salary='', isPrimary=false){ const grid=document.getElementById('personGrid'); const card=document.createElement('div'); card.className='person-card'; card.innerHTML=`<div class="head"><span class="ico">${isPrimary?'🧑':'👤'}</span><input class="name" type="text" placeholder="Namn" value="${name}"></div><input class="salary" type="text" inputmode="decimal" placeholder="Lön" value="${salary}"><button class="del" ${isPrimary?'disabled':''} title="Ta bort">🗑️</button>`; const nameEl=card.querySelector('.name'); const salEl=card.querySelector('.salary'); nameEl.addEventListener('input',()=>{ calc(); scheduleSave(); updateSharesUI(true); }); salEl.addEventListener('input',()=>{ calc(); scheduleSave(); updateSharesUI(true); }); card.querySelector('.del').addEventListener('click',()=>{ if(!isPrimary){ card.remove(); calc(); scheduleSave(); updateSharesUI(true); }}); grid.appendChild(card); }
 
-// Defaults
-function ensureDefaults(){ const p=getPrefs(); if(p.budgetMode===undefined){ p.budgetMode=true; setPrefs(p); } const b=getBudget(); b.rows=b.rows||{}; b.rowsMode=b.rowsMode||{}; // default per-rad OFF
-  document.querySelectorAll('label.cat, label.custom').forEach(l=>{ const id=l.dataset.id; if(!(id in b.rowsMode)) b.rowsMode[id]=false; }); setBudget(b); }
-
-// Budget toggles
+// Budget ON/OFF per row
 function isRowBudgetOn(id){ const b=getBudget(); return !!((b.rowsMode||{})[id]) }
-function toggleRowBudget(label){ const id=label.dataset.id; const b=getBudget(); b.rowsMode=b.rowsMode||{}; b.rowsMode[id]= !isRowBudgetOn(id); setBudget(b); applyBudgetVisibilityFor(label); renderAudit(); scheduleSave(); }
+function setRowBudget(id, on){ const b=getBudget(); b.rowsMode=b.rowsMode||{}; b.rowsMode[id]=!!on; setBudget(b) }
+function toggleRowBudget(label){ const id=label.dataset.id; setRowBudget(id, !isRowBudgetOn(id)); applyBudgetVisibilityFor(label); renderAudit(); scheduleSave(); }
+
 function applyBudgetVisibility(){ const p=getPrefs(); const on=!!p.budgetMode; const hdrBtn=document.getElementById('budgetModeToggle'); if(hdrBtn) hdrBtn.textContent=`🎯 Budgetläge: ${on?'ON':'OFF'}`; document.querySelectorAll('label.cat, label.custom').forEach(applyBudgetVisibilityFor); const auditSec=document.querySelector('.sec.audit'); if(auditSec) auditSec.style.display = on? 'block':'none'; }
 function applyBudgetVisibilityFor(label){ const p=getPrefs(); const on=!!p.budgetMode; const id=label.dataset.id; const rowOn=isRowBudgetOn(id); const show = on && rowOn; const extra=label.querySelector('.row-extra'); if(extra) extra.style.display= show? 'flex':'none'; const btn=label.querySelector('.budgetCat'); if(btn){ btn.textContent='🎯'+(rowOn?' ON':' OFF'); btn.classList.toggle('active', rowOn); } updateRowBudgetUI(label); }
 
-function updateRowBudgetUI(label){ const p=getPrefs(); const on=!!p.budgetMode; const id=label.dataset.id; const rowOn=isRowBudgetOn(id); const show = on && rowOn; const box=label.querySelector('.row-budget'); if(!box) return; const budget=parseDec(label.querySelector('.budget')?.value||''); const amountEl=document.getElementById(id) || label.querySelector('.c-val'); const val=parseDec(amountEl?.value||''); const bar=box.querySelector('.bar>div'); const txt=box.querySelector('.txt'); if(!show || !budget){ bar.style.width='0%'; box.classList.remove('over','near'); txt.textContent='—'; return } const pct = Math.min(150, Math.round(val*100/budget)); bar.style.width=pct+'%'; box.classList.remove('over','near'); if(pct>100) box.classList.add('over'); else if(pct>=90) box.classList.add('near'); const diff=val-budget; const pctDiff=budget>0? ((val/budget-1)*100):0; txt.textContent=`Utfallet: ${kr(val)} | Avvikelse: ${(diff>=0?'+':'−')}${kr(Math.abs(diff))} (${pctDiff.toFixed(1)}%)`; }
-function updateAllRowBudgets(){ document.querySelectorAll('label.cat').forEach(applyRow); document.querySelectorAll('label.custom').forEach(applyRow); function applyRow(l){ updateRowBudgetUI(l) } }
+function readRowBudget(label){ const inp=label.querySelector('.budget'); return parseDec(inp?.value||'') }
+function updateRowBudgetUI(label){ const p=getPrefs(); const on=!!p.budgetMode; const id=label.dataset.id; const rowOn=isRowBudgetOn(id); const show = on && rowOn; const box=label.querySelector('.row-budget'); if(!box) return; const budget=readRowBudget(label); const amountEl=document.getElementById(id) || label.querySelector('.c-val'); const val=parseDec(amountEl?.value||''); const bar=box.querySelector('.bar>div'); const txt=box.querySelector('.txt'); if(!show || !budget){ bar.style.width='0%'; box.classList.remove('over','near'); txt.textContent='—'; return } const pct = Math.min(150, Math.round(val*100/budget)); bar.style.width=pct+'%'; box.classList.remove('over','near'); if(pct>100) box.classList.add('over'); else if(pct>=90) box.classList.add('near'); const diff=val-budget; const pctDiff=budget>0? ((val/budget-1)*100):0; txt.textContent=`Utfallet: ${kr(val)} | Avvikelse: ${(diff>=0?'+':'−')}${kr(Math.abs(diff))} (${pctDiff.toFixed(1)}%)`; }
+function updateAllRowBudgets(){ document.querySelectorAll('label.cat').forEach(updateRowBudgetUI); document.querySelectorAll('label.custom').forEach(updateRowBudgetUI); }
+
+// Robust event delegation (fix för att knappar ska funka även efter dynamiska uppdateringar)
+document.addEventListener('click', (e)=>{
+  const budgetBtn = e.target.closest('.budgetCat');
+  if(budgetBtn){ const label = budgetBtn.closest('label.cat, label.custom'); if(label) toggleRowBudget(label); }
+  const hideBtn = e.target.closest('.hideCat'); if(hideBtn){ const label=hideBtn.closest('label.cat, label.custom'); toggleHideCat(label); }
+  const shareBtn = e.target.closest('.shareCat'); if(shareBtn){ const label=shareBtn.closest('label.cat, label.custom'); toggleShareCat(label); }
+  const payBtn = e.target.closest('.payCat'); if(payBtn){ const label=payBtn.closest('label.cat, label.custom'); togglePaymentsDrawer(label); }
+});
+
+document.addEventListener('input',(e)=>{
+  if(e.target.classList.contains('budget')){ const label=e.target.closest('label.cat, label.custom'); updateRowBudgetUI(label); calc(); scheduleSave(); }
+  if(e.target.classList.contains('c-val') || (e.target.id && e.target.closest('label.cat'))){ calc(); scheduleSave(); updateRowShare(e.target.closest('label.cat, label.custom')); updateAllRowBudgets(); }
+});
 
 // Hidden/Shared
 const toggleHideCat=(label)=>{ const id=label.dataset.id; const h=getHidden(); label.classList.toggle('hidden'); if(label.classList.contains('hidden')){ if(!h.includes(id)) h.push(id) } else { const i=h.indexOf(id); if(i>=0) h.splice(i,1) } setHidden(h); calc(); scheduleSave(); };
@@ -61,10 +78,10 @@ function updateRowShare(label){ const hidden=getHidden(); const id=label.dataset
   const persons=readPersons(); const total=persons.reduce((s,p)=> s+(p.salary||0),0); const sr=ensureSplitRow(label); sr.innerHTML=''; if(!shared || amount<=0 || total<=0){ sr.style.display='none'; return } sr.style.display='flex'; const hiddenPersons=getHiddenPersons(); persons.filter(p=> !hiddenPersons.includes(p.name)).forEach(p=>{ const share = amount * ( (p.salary||0) / total ); const pill=document.createElement('span'); pill.className='split-pill'; pill.textContent=`${p.name}: ${kr(share)}`; sr.appendChild(pill); }) }
 function updateAllRowShares(){ document.querySelectorAll('label.cat').forEach(updateRowShare); document.querySelectorAll('label.custom').forEach(updateRowShare); }
 
-// Sums & helpers
+// Calc helpers
 function n(id){const el=document.getElementById(id); return parseDec(el?el.value:'') }
 function sumSection(ids){ const hidden=getHidden(); return ids.reduce((s,id)=> s + (hidden.includes(id)?0:n(id)),0) }
-function sumCustom(section, onlyShared=false){ const gridId=section==='fixed'?'fixedBaseGrid':section==='var'?'varBaseGrid':'saveBaseGrid'; return [...document.querySelectorAll(`#${gridId} label.custom`)].reduce((s,l)=>{ const val=parseDec(l.querySelector('.c-val')?.value||''); const share=l.classList.contains('share'); return s + ((onlyShared? share: true)? val:0) },0) }
+function sumCustom(section){ const gridId=section==='fixed'?'fixedBaseGrid':section==='var'?'varBaseGrid':'saveBaseGrid'; return [...document.querySelectorAll(`#${gridId} label.custom`)].reduce((s,l)=> s+parseDec(l.querySelector('.c-val')?.value||''),0) }
 
 // Calc & distribution
 function setText(id, txt){ const el=document.getElementById(id); if(el) el.textContent=txt }
@@ -82,9 +99,11 @@ function calc(){
   const spent=fixed+vari; const left=Math.max(0, income-spent); const pct= income>0? Math.round(left*100/income):0; setText('leftPct', pct+'%'); const bar=document.getElementById('leftBar'); if(bar) bar.style.width=pct+'%';
   updateAllRowShares(); updateAllRowBudgets(); updateSharesUI(); renderAudit(); }
 
+function getPaidTotals(){ const rp=getRowPaid(); const persons=readPersons(); const totals=Object.fromEntries(persons.map(p=>[p.name,0])); Object.keys(rp||{}).forEach(rowId=>{ const data=rp[rowId]; Object.keys(data||{}).forEach(name=>{ if(name==='__mustSum') return; if(totals[name]===undefined) totals[name]=0; totals[name]+= parseDec(data[name]||0); }) }); return totals }
+
 function updateSharesUI(forceRebuild=false){
   const persons=readPersons(); const total=persons.reduce((s,p)=> s+(p.salary||0),0); const list=document.getElementById('sharePeople'); if(!list) return;
-  const sharedBaseIds=[ 'boende','bredband','telefoni','barnomsorg1','barnomsorg2','fackforbund','personfors','barnfors','djurfors','hemfors','bilfors','fors_ovrigt','stream_netflix','stream_spotify','stream_hbo','stream_ovrigt1','stream_ovrigt2','mat','hushall','klader','nojen','halsa','energi','ror_ovrigt','bransle','service','skatt','parkering','fordon_ovrigt' ]; const hidden=getHidden(); const sharedSet=getShared(); const sharedBaseSum = sharedBaseIds.reduce((s,id)=> s + (hidden.includes(id)?0: (sharedSet.includes(id)? n(id):0)), 0); const sharedCustomSum = sumCustom('fixed', true) + sumCustom('var', true); const sharedTotal = sharedBaseSum + sharedCustomSum; setText('sharedTotal', kr(sharedTotal)); setText('salaryTotal', kr(total)); const p = total>0? (sharedTotal / total): 0; setText('sharePct', (p*100).toFixed(1)+'%');
+  const sharedBaseIds=[ 'boende','bredband','telefoni','barnomsorg1','barnomsorg2','fackforbund','personfors','barnfors','djurfors','hemfors','bilfors','fors_ovrigt','stream_netflix','stream_spotify','stream_hbo','stream_ovrigt1','stream_ovrigt2','mat','hushall','klader','nojen','halsa','energi','ror_ovrigt','bransle','service','skatt','parkering','fordon_ovrigt' ]; const hidden=getHidden(); const sharedSet=getShared(); const sharedBaseSum = sharedBaseIds.reduce((s,id)=> s + (hidden.includes(id)?0: (sharedSet.includes(id)? n(id):0)), 0); const sharedCustomSum = 0; const sharedTotal = sharedBaseSum + sharedCustomSum; setText('sharedTotal', kr(sharedTotal)); setText('salaryTotal', kr(total)); const p = total>0? (sharedTotal / total): 0; setText('sharePct', (p*100).toFixed(1)+'%');
   if(forceRebuild || list.children.length!==persons.length){ list.innerHTML=''; const vp=getViewPrefs(); const hiddenPersons=vp.hiddenPersons||[]; persons.forEach(person=>{ const div=document.createElement('div'); div.className='person-share'; div.dataset.name=person.name; if(hiddenPersons.includes(person.name)) div.classList.add('dhidden'); const andelPct = total>0? (person.salary/total*100):0; const skall = sharedTotal * ( total>0? (person.salary/total): 0 ); const paidTotals=getPaidTotals(); const paid=paidTotals[person.name]||0; const progress = skall>0? Math.round(paid*100/skall): 0; const saldo = paid - skall; div.innerHTML=`<div class="row"><span><strong>${person.name}</strong> — Andel: ${andelPct.toFixed(1)}%</span><span>Skall: <strong class="skall">${kr(skall)}</strong></span><span>Betalat: <strong class="paid">${kr(paid)}</strong></span><span>Progress: <strong class="progress">${progress}%</strong></span><span>Saldo: <strong class="saldo">${kr(saldo)}</strong></span><button class="toggle">${ hiddenPersons.includes(person.name)? '👁 Visa':'👁 Dölj visning' }</button></div><div class="bar"><div style="width:${Math.min(100,Math.max(0,progress))}%"></div></div>`; div.querySelector('.toggle').addEventListener('click',()=>{ const vp2=getViewPrefs(); vp2.hiddenPersons=vp2.hiddenPersons||[]; const arr=vp2.hiddenPersons; const ix=arr.indexOf(person.name); if(ix>=0) arr.splice(ix,1); else arr.push(person.name); setViewPrefs(vp2); updateSharesUI(true); updateAllRowShares(); }); list.appendChild(div); }); return }
   const paidTotals=getPaidTotals(); [...document.querySelectorAll('.person-share')].forEach(div=>{ const name=div.dataset.name; const person=persons.find(x=> x.name===name ); const andelPct = total>0? ( (person?.salary||0)/total*100 ):0; const skall = sharedTotal * ( total>0? ((person?.salary||0)/total): 0 ); const paid=paidTotals[name]||0; const progress = skall>0? Math.round(paid*100/skall): 0; const saldo = paid - skall; div.querySelector('.skall').textContent=kr(skall); div.querySelector('.paid').textContent=kr(paid); div.querySelector('.progress').textContent=(progress)+'%'; div.querySelector('.saldo').textContent=kr(saldo); const bar=div.querySelector('.bar>div'); bar.style.width=(Math.min(100,Math.max(0,progress)))+'%'; const hiddenPersons=getHiddenPersons(); div.classList.toggle('dhidden', hiddenPersons.includes(name)); });
 }
@@ -100,7 +119,6 @@ function togglePaymentsDrawer(label){ let d=label.querySelector('.drawer'); if(d
   label.appendChild(d);
   updatePaymentsWarn(); }
 function scheduleSaveRowPaid(label){ const id=label.dataset.id; const grid=label.querySelector('.drawer .pay-grid'); if(!grid) return; const rp=getRowPaid(); rp[id]=rp[id]||{}; grid.querySelectorAll('input').forEach(inp=>{ rp[id][inp.dataset.name]= parseDec(inp.value||'') }); setRowPaid(rp); scheduleSave(); }
-function getPaidTotals(){ const rp=getRowPaid(); const persons=readPersons(); const totals=Object.fromEntries(persons.map(p=>[p.name,0])); Object.keys(rp).forEach(rowId=>{ const data=rp[rowId]; Object.keys(data||{}).forEach(name=>{ if(name==='__mustSum') return; if(totals[name]===undefined) totals[name]=0; totals[name]+= parseDec(data[name]||0); }) }); return totals }
 
 // Snapshot & audit
 function buildCurrentTotals(){ const persons=readPersons(); const salaries=persons.reduce((s,p)=> s+(p.salary||0),0); const income = salaries + n('formaner') + n('barnbidrag') + n('ink_ovrigt'); const fors = sumSection(['personfors','barnfors','djurfors','hemfors','bilfors','fors_ovrigt']); const stream = sumSection(['stream_netflix','stream_spotify','stream_hbo','stream_ovrigt1','stream_ovrigt2']); const fixed = sumSection(['boende','bredband','telefoni','barnomsorg1','barnomsorg2','fackforbund']) + fors + stream + sumCustom('fixed'); const fordon = sumSection(['bransle','service','skatt','parkering','fordon_ovrigt']); const vari = sumSection(['mat','hushall','klader','nojen','halsa','energi','ror_ovrigt']) + fordon + sumCustom('var'); const spar = sumSection(['spar1','spar2','spar3','spar4','spar5','spar6','skuld']) + sumCustom('save'); const res = income - fixed - vari - spar; const rows={}; const hidden=getHidden(); const baseIds=['boende','bredband','telefoni','barnomsorg1','barnomsorg2','fackforbund','personfors','barnfors','djurfors','hemfors','bilfors','fors_ovrigt','stream_netflix','stream_spotify','stream_hbo','stream_ovrigt1','stream_ovrigt2','mat','hushall','klader','nojen','halsa','energi','ror_ovrigt','bransle','service','skatt','parkering','fordon_ovrigt','spar1','spar2','spar3','spar4','spar5','spar6','skuld']; baseIds.forEach(id=>{ rows[id]= hidden.includes(id)?0: n(id) }); document.querySelectorAll('label.custom').forEach(l=>{ const id=l.dataset.id; const val=parseDec(l.querySelector('.c-val')?.value||''); rows[id]=val }); return {income,fixed,var:vari,spar,res, rows} }
@@ -117,25 +135,20 @@ function sumBudgetOfSection(section, budgetRows, rowsMode){ const base = section
 function prettyNameForId(id){ const map={ boende:'Hyra/Bolån', bredband:'Bredband', telefoni:'Telefoni', barnomsorg1:'Barnomsorg 1', barnomsorg2:'Barnomsorg 2', fackforbund:'Fackförbund', personfors:'Personförsäkring', barnfors:'Barnförsäkring', djurfors:'Djurförsäkring', hemfors:'Hemförsäkring', bilfors:'Bilförsäkring', fors_ovrigt:'Övrig försäkring', stream_netflix:'Netflix', stream_spotify:'Spotify', stream_hbo:'HBO', stream_ovrigt1:'Streaming Övrigt 1', stream_ovrigt2:'Streaming Övrigt 2', mat:'Mat', hushall:'Hushåll', klader:'Kläder', nojen:'Nöjen', halsa:'Hälsa', energi:'El/Värme', ror_ovrigt:'Rörligt Övrigt', bransle:'Bränsle', service:'Service', skatt:'Skatt/Besiktning', parkering:'Parkering', fordon_ovrigt:'Övrigt fordon', spar1:'Sparande 1', spar2:'Sparande 2', spar3:'Sparande 3', spar4:'Sparande 4', spar5:'Sparande 5', spar6:'Sparande 6', skuld:'Skuld' }; return map[id]||'Egen rad' }
 
 // Year summary
+const key=m=>`budgetV112_${Y()}-${m}`;
 function getMonthTotals(m){ const raw=localStorage.getItem(key(m)); if(!raw) return {income:0,fixed:0,var:0,spar:0,res:0}; try{ const d=JSON.parse(raw); const dec=x=>parseDec(d[x]); const hidden=d['_hidden']||[]; const H=id=> hidden.includes(id)?0:dec(id); const persons=(d['_persons']||[{name:'Du',salary:0}]).reduce((s,p)=> s+(parseDec(p.salary)||0),0); const income = persons + dec('formaner') + dec('barnbidrag') + dec('ink_ovrigt'); const fors = H('personfors')+H('barnfors')+H('djurfors')+H('hemfors')+H('bilfors')+H('fors_ovrigt'); const stream = H('stream_netflix')+H('stream_spotify')+H('stream_hbo')+H('stream_ovrigt1')+H('stream_ovrigt2'); const fixedCustom=(d['_fixedCustom']||[]).reduce((s,c)=> s+(parseDec(c.value)||0),0); const fixed = (H('boende')+H('bredband')+H('telefoni')+H('barnomsorg1')+H('barnomsorg2')+H('fackforbund')) + fors + stream + fixedCustom; const fordon = H('bransle')+H('service')+H('skatt')+H('parkering')+H('fordon_ovrigt'); const varCustom=(d['_varCustom']||[]).reduce((s,c)=> s+(parseDec(c.value)||0),0); const vari = (H('mat')+H('hushall')+H('klader')+H('nojen')+H('halsa')+H('energi')+H('ror_ovrigt')) + fordon + varCustom; const saveCustom=(d['_saveCustom']||[]).reduce((s,c)=> s+(parseDec(c.value)||0),0); const spar = (H('spar1')+H('spar2')+H('spar3')+H('spar4')+H('spar5')+H('spar6')+H('skuld')) + saveCustom; const res = income - fixed - vari - spar; return {income,fixed,var:vari,spar,res}; }catch{ return {income:0,fixed:0,var:0,spar:0,res:0} } }
 function updateYearSummary(){ const ms=['01','02','03','04','05','06','07','08','09','10','11','12']; let yi=0,yf=0,yv=0,ys=0,yr=0; ms.forEach(m=>{ const t=getMonthTotals(m); yi+=t.income; yf+=t.fixed; yv+=t.var; ys+=t.spar; yr+=t.res; }); setText('y_income', kr(yi)); setText('y_fixed', kr(yf)); setText('y_var', kr(yv)); setText('y_spar', kr(ys)); setText('y_result', kr(yr)); }
 
 // CSV/PDF
-const key=m=>`budgetV113_${Y()}-${m}`;
-function saveMonth(){ const ids=['period','namn','formaner','barnbidrag','ink_ovrigt','boende','bredband','telefoni','barnomsorg1','barnomsorg2','fackforbund','personfors','barnfors','djurfors','hemfors','bilfors','fors_ovrigt','stream_netflix','stream_spotify','stream_hbo','stream_ovrigt1','stream_ovrigt2','mat','hushall','klader','nojen','halsa','energi','ror_ovrigt','bransle','service','skatt','parkering','fordon_ovrigt','spar1','spar2','spar3','spar4','spar5','spar6','skuld']; const d={}; ids.forEach(id=>{ const el=document.getElementById(id); if(el) d[id]=el.value }); d['_persons']=readPersons(); d['_fixedCustom']=readCustom('fixed'); d['_varCustom']=readCustom('var'); d['_saveCustom']=readCustom('save'); d['_hidden']=getHidden(); d['_shared']=getShared(); d['_viewPrefs']=getViewPrefs(); d['_rowPaid']=getRowPaid(); d['_budget']=getBudget(); d['_snapshot']=getSnapshot(); d['_prefs']=getPrefs(); localStorage.setItem(key(currentMonth), JSON.stringify(d)); }
-function saveCtx(){ localStorage.setItem(CTX_KEY, JSON.stringify({y:Y(), m:currentMonth})) }
-function readCustom(section){ const gridId=section==='fixed'?'fixedBaseGrid':section==='var'?'varBaseGrid':'saveBaseGrid'; return [...document.querySelectorAll(`#${gridId} label.custom`)].map(l=>({ name:l.querySelector('.c-name')?.value||'', value: parseDec(l.querySelector('.c-val')?.value||''), share: l.classList.contains('share'), id:l.dataset.id, section })) }
-
 function exportMonthCSV(){ const rows=[["År",Y()],["Månad",currentMonth]]; const add=(a,b)=>rows.push([a,b]); const read=id=>document.getElementById(id)?.value||''; rows.push([]);
   rows.push(['Person','Lön']); readPersons().forEach(p=> rows.push([p.name,p.salary])); rows.push([]);
   add('Förmåner',read('formaner')); add('Barnbidrag',read('barnbidrag')); add('Övrig inkomst',read('ink_ovrigt')); add('Summa inkomster',document.getElementById('sum_income').textContent); rows.push([]);
   ['boende','bredband','telefoni','barnomsorg1','barnomsorg2','fackforbund','personfors','barnfors','djurfors','hemfors','bilfors','fors_ovrigt','stream_netflix','stream_spotify','stream_hbo','stream_ovrigt1','stream_ovrigt2','mat','hushall','klader','nojen','halsa','energi','ror_ovrigt','bransle','service','skatt','parkering','fordon_ovrigt','spar1','spar2','spar3','spar4','spar5','spar6','skuld'].forEach(id=> add(id, read(id)) ); rows.push([]);
   rows.push(['Egna rader','Belopp']); document.querySelectorAll('label.custom').forEach(l=>{ rows.push([l.querySelector('.c-name')?.value||'Egen', parseDec(l.querySelector('.c-val')?.value||'')]) }); rows.push([]);
-  add('Summa streaming',document.getElementById('sum_streaming').textContent); add('Summa fordon',document.getElementById('sum_fordon').textContent); add('Summa fasta',document.getElementById('sum_fixed').textContent); add('Summa rörliga',document.getElementById('sum_var').textContent); add('Summa spar/skuld',document.getElementById('sum_spar').textContent); rows.push([]);
+  add('Summa fasta',document.getElementById('sum_fixed').textContent); add('Summa rörliga',document.getElementById('sum_var').textContent); add('Summa spar/skuld',document.getElementById('sum_spar').textContent); rows.push([]);
   add('Resultat',document.getElementById('resultat').textContent);
   rows.push([]);
   rows.push(['Budget per rad']); const B=getBudget().rows||{}; const rowsMode=(getBudget().rowsMode)||{}; Object.keys(B).forEach(id=>{ rows.push([id, B[id], rowsMode[id]===false? 'OFF':'ON']) }); rows.push([]);
-  rows.push(['Per‑rad betalningar','Person','Belopp']); const rp=getRowPaid(); Object.keys(rp||{}).forEach(id=>{ const data=rp[id]; Object.keys(data||{}).forEach(name=>{ if(name==='__mustSum') return; rows.push([id, name, data[name]]) }) });
   const csv=rows.map(r=>r.join(';')).join('\n'); const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`budget_${Y()}-${currentMonth}.csv`; a.click(); URL.revokeObjectURL(url); }
 
 function exportYearCSV(){ const rows=[["År",Y()]]; const ms=['01','02','03','04','05','06','07','08','09','10','11','12']; rows.push(["Månad","Inkomster","Fasta","Rörliga","Spar/Skuld","Resultat"]); ms.forEach(m=>{ const t=getMonthTotals(m); rows.push([m, Math.round(t.income), Math.round(t.fixed), Math.round(t.var), Math.round(t.spar), Math.round(t.res)]) }); const csv=rows.map(r=>r.join(';')).join('\n'); const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`budget_${Y()}_arsoversikt.csv`; a.click(); URL.revokeObjectURL(url); }
@@ -144,15 +157,16 @@ async function exportPDF(){ const { jsPDF } = window.jspdf; const doc = new jsPD
   doc.setFontSize(16); doc.text('Hushållsbudget – Månad', m, y); y+=24; doc.setFontSize(12);
   T('Inkomster:', document.getElementById('sum_income').textContent); T('Fasta:', document.getElementById('sum_fixed').textContent); T('Rörliga:', document.getElementById('sum_var').textContent); T('Spar/Skuld:', document.getElementById('sum_spar').textContent); T('Resultat:', document.getElementById('resultat').textContent); y+=10;
   const persons=readPersons(); if(persons.length){ doc.text('Huvudpersoner (lön):', m, y); y+=18; persons.forEach(p=>{ doc.text(`• ${p.name}: ${p.salary} kr`, m+16, y); y+=16; }); }
-  const sharedTotal=document.getElementById('sharedTotal').textContent; const sharePct=document.getElementById('sharePct').textContent; doc.text(`Delad summa: ${sharedTotal} | Procent av lön: ${sharePct}`, m, y); y+=18;
+  const sharedTotal=document.getElementById('sharedTotal')?.textContent||''; const sharePct=document.getElementById('sharePct')?.textContent||''; if(sharedTotal) doc.text(`Delad summa: ${sharedTotal} | Procent av lön: ${sharePct}`, m, y);
   doc.save(`budget_${Y()}-${currentMonth}.pdf`);
 }
 
 // Save / Load
 let saveTimer=null; const scheduleSave=()=>{ clearTimeout(saveTimer); saveTimer=setTimeout(()=>{ saveMonth(); saveCtx(); },300) };
+function saveMonth(){ const ids=['period','namn','formaner','barnbidrag','ink_ovrigt','boende','bredband','telefoni','barnomsorg1','barnomsorg2','fackforbund','personfors','barnfors','djurfors','hemfors','bilfors','fors_ovrigt','stream_netflix','stream_spotify','stream_hbo','stream_ovrigt1','stream_ovrigt2','mat','hushall','klader','nojen','halsa','energi','ror_ovrigt','bransle','service','skatt','parkering','fordon_ovrigt','spar1','spar2','spar3','spar4','spar5','spar6','skuld']; const d={}; ids.forEach(id=>{ const el=document.getElementById(id); if(el) d[id]=el.value }); d['_persons']=readPersons(); d['_fixedCustom']=readCustom('fixed'); d['_varCustom']=readCustom('var'); d['_saveCustom']=readCustom('save'); d['_hidden']=getHidden(); d['_shared']=getShared(); d['_viewPrefs']=getViewPrefs(); d['_rowPaid']=getRowPaid(); d['_budget']=getBudget(); d['_snapshot']=getSnapshot(); d['_prefs']=getPrefs(); localStorage.setItem(key(currentMonth), JSON.stringify(d)); }
+function saveCtx(){ localStorage.setItem(CTX_KEY, JSON.stringify({y:Y(), m:currentMonth})) }
+function readCustom(section){ const gridId=section==='fixed'?'fixedBaseGrid':section==='var'?'varBaseGrid':'saveBaseGrid'; return [...document.querySelectorAll(`#${gridId} label.custom`)].map(l=>({ name:l.querySelector('.c-name')?.value||'', value: parseDec(l.querySelector('.c-val')?.value||''), share: l.classList.contains('share'), id:l.dataset.id })) }
 function loadMonth(m){ currentMonth=m; document.querySelectorAll('.month-buttons button').forEach(b=>b.classList.toggle('active',b.dataset.month===m)); const ids=['period','namn','formaner','barnbidrag','ink_ovrigt','boende','bredband','telefoni','barnomsorg1','barnomsorg2','fackforbund','personfors','barnfors','djurfors','hemfors','bilfors','fors_ovrigt','stream_netflix','stream_spotify','stream_hbo','stream_ovrigt1','stream_ovrigt2','mat','hushall','klader','nojen','halsa','energi','ror_ovrigt','bransle','service','skatt','parkering','fordon_ovrigt','spar1','spar2','spar3','spar4','spar5','spar6','skuld']; ids.forEach(id=>{ const el=document.getElementById(id); if(el) el.value='' }); ['fixedBaseGrid','varBaseGrid','saveBaseGrid'].forEach(g=>{ document.querySelectorAll(`#${g} label.custom`).forEach(n=>n.remove()); });
-  // Bind base buttons on core labels
-  document.querySelectorAll('label.cat').forEach(l=>{ l.classList.remove('hidden','share'); const hide=l.querySelector('.hideCat'); const share=l.querySelector('.shareCat'); const pay=l.querySelector('.payCat'); const budgetBtn=l.querySelector('.budgetCat'); const budget=l.querySelector('.budget'); hide&&hide.addEventListener('click',()=> toggleHideCat(l)); share&&share.addEventListener('click',()=> toggleShareCat(l)); pay&&pay.addEventListener('click',()=> togglePaymentsDrawer(l)); budgetBtn&&budgetBtn.addEventListener('click',()=> toggleRowBudget(l)); budget&&budget.addEventListener('input',()=>{ calc(); scheduleSave(); updateAllRowBudgets(); }); });
   renderPersons(defaultPersons()); setViewPrefs({hiddenPersons:(getViewPrefs().hiddenPersons||[])}); setRowPaid(getRowPaid()); setSnapshot(getSnapshot());
   const raw=localStorage.getItem(key(m)); if(raw){ try{ const d=JSON.parse(raw); ids.forEach(id=>{ const el=document.getElementById(id); if(el && d[id]!==undefined) el.value=d[id] }); renderPersons(d['_persons']&&d['_persons'].length? d['_persons']: defaultPersons()); (d['_fixedCustom']||[]).forEach(c=>{ const l=makeCustomLabel('fixed', c.name, c.value, !!c.share); document.getElementById('fixedBaseGrid').appendChild(l); }); (d['_varCustom']||[]).forEach(c=>{ const l=makeCustomLabel('var', c.name, c.value, !!c.share); document.getElementById('varBaseGrid').appendChild(l); }); (d['_saveCustom']||[]).forEach(c=>{ const l=makeCustomLabel('save', c.name, c.value, !!c.share); document.getElementById('saveBaseGrid').appendChild(l); }); if(d['_hidden']) setHidden(d['_hidden']); if(d['_shared']) setShared(d['_shared']); if(d['_viewPrefs']) setViewPrefs(d['_viewPrefs']); if(d['_rowPaid']) setRowPaid(d['_rowPaid']); if(d['_budget']) setBudget(d['_budget']); if(d['_snapshot']) setSnapshot(d['_snapshot']); if(d['_prefs']) setPrefs(d['_prefs']); const B=(getBudget().rows)||{}; document.querySelectorAll('label.cat').forEach(l=>{ const b=B[l.dataset.id]; if(b!==undefined) l.querySelector('.budget').value=b }); document.querySelectorAll('label.custom').forEach(l=>{ const b=B[l.dataset.id]; if(b!==undefined) l.querySelector('.budget').value=b }); }catch{} }
   ensureDefaults(); applyBudgetVisibility(); calc(); updatePeriod(); updateYearSummary(); drawPie(); updateSharesUI(true); updateAllRowShares(); updateAllRowBudgets(); renderAudit(); saveCtx(); }
@@ -172,37 +186,35 @@ function makeCustomLabel(section, name='', value='', share=false){ const label=d
   <input class="c-val" type="text" inputmode="decimal" placeholder="Belopp" value="${value}">
   <div class="row-ctl"><button class="hideCat" title="Dölj">👁️</button><button class="shareCat" title="Delas">🔗</button><button class="payCat" title="Betalningar">💳</button><button class="budgetCat" title="Budget ON/OFF">🎯</button></div>
   <div class="row-extra"><span class="budget-wrap">🎯 Budget <input class="budget" type="text" inputmode="decimal" placeholder="kr"></span><div class="row-budget"><div class="bar"><div></div></div><small class="txt">—</small></div></div>`;
-  label.querySelector('.c-name').addEventListener('input',()=>{ calc(); scheduleSave(); updateRowShare(label); });
-  label.querySelector('.c-val').addEventListener('input',()=>{ calc(); scheduleSave(); updateRowShare(label); updateAllRowBudgets(); });
-  label.querySelector('.hideCat').addEventListener('click',()=> toggleHideCat(label));
-  label.querySelector('.shareCat').addEventListener('click',()=> toggleShareCat(label));
-  label.querySelector('.payCat').addEventListener('click',()=> togglePaymentsDrawer(label));
-  label.querySelector('.budgetCat').addEventListener('click',()=> toggleRowBudget(label));
-  label.querySelector('.budget').addEventListener('input',()=>{ calc(); scheduleSave(); updateAllRowBudgets(); });
   return label }
-function addCustomTo(section){ const gridId=section==='fixed'?'fixedBaseGrid':section==='var'?'varBaseGrid':'saveBaseGrid'; const grid=document.getElementById(gridId); const label=makeCustomLabel(section,'','', false); grid.appendChild(label); calc(); scheduleSave(); applyBudgetVisibility(); }
+function addCustomTo(section){ const gridId=section==='fixed'?'fixedBaseGrid':section==='var'?'varBaseGrid':'saveBaseGrid'; const grid=document.getElementById(gridId); const label=makeCustomLabel(section,'','', false); grid.appendChild(label); ensureDefaults(); applyBudgetVisibilityFor(label); calc(); scheduleSave(); }
 
-// Header
-function bindHeader(){ document.getElementById('budgetModeToggle').addEventListener('click',()=>{ const p=getPrefs(); p.budgetMode=!p.budgetMode; setPrefs(p); applyBudgetVisibility(); updateAllRowBudgets(); renderAudit(); scheduleSave(); }); const nextTip=()=>{ const TIPS=['Sätt autogiro för sparande direkt efter löning.','Jämför försäkringar vartannat år.','Planera veckans mat – minska spontanköp.','Förhandla bolåneräntan årligen.','Rensa onödiga prenumerationer varje kvartal.']; document.getElementById('tipText').textContent=TIPS[Math.floor(Math.random()*TIPS.length)] }; document.getElementById('nextTip').addEventListener('click',nextTip); nextTip(); }
+// Header + theme
+function applyTheme(){ const t=localStorage.getItem('budgetV112_theme')||'light'; if(t==='dark') document.documentElement.setAttribute('data-theme','dark'); else document.documentElement.removeAttribute('data-theme') }
+function toggleTheme(){ const dark=document.documentElement.getAttribute('data-theme')==='dark'; localStorage.setItem('budgetV112_theme', dark?'light':'dark'); applyTheme() }
 
 // Init
 window.addEventListener('DOMContentLoaded',()=>{
-  bindHeader();
+  applyTheme();
+  document.getElementById('darkToggle').addEventListener('click',toggleTheme);
+  document.getElementById('budgetModeToggle').addEventListener('click',()=>{ const p=getPrefs(); p.budgetMode= !(p.budgetMode); setPrefs(p); applyBudgetVisibility(); updateAllRowBudgets(); renderAudit(); scheduleSave(); });
   document.getElementById('addPersonBtn').addEventListener('click',()=>{ addPersonCard('Betalare', '', false); calc(); scheduleSave(); updateSharesUI(true); });
-  document.getElementById('addFixedCustom').addEventListener('click',()=>{ addCustomTo('fixed'); });
-  document.getElementById('addVarCustom').addEventListener('click',()=>{ addCustomTo('var'); });
-  document.getElementById('addSaveCustom').addEventListener('click',()=>{ addCustomTo('save'); });
-  document.querySelectorAll('input').forEach(el=>el.addEventListener('input',()=>{ calc(); scheduleSave(); drawPie(); }));
-  document.getElementById('year').addEventListener('change',()=>{ loadMonth(currentMonth); scheduleSave(); });
-  document.querySelectorAll('.month-buttons button').forEach(btn=>btn.addEventListener('click',()=>{ loadMonth(btn.dataset.month); scheduleSave(); }));
+  document.getElementById('addFixedCustom').addEventListener('click',()=> addCustomTo('fixed'));
+  document.getElementById('addVarCustom').addEventListener('click',()=> addCustomTo('var'));
+  document.getElementById('addSaveCustom').addEventListener('click',()=> addCustomTo('save'));
   document.getElementById('copyPrevBtn').addEventListener('click',copyPrev);
   document.getElementById('resetMonthBtn').addEventListener('click',()=>{ if(confirm('Rensa alla fält för aktuell månad?')) resetMonth(); });
   document.getElementById('csvBtn').addEventListener('click',exportMonthCSV);
   document.getElementById('yearCsvBtn').addEventListener('click',exportYearCSV);
   document.getElementById('pdfBtn').addEventListener('click',exportPDF);
-  ensureDefaults();
+  document.getElementById('closeMonthBtn').addEventListener('click',closeMonth);
+  document.getElementById('openMonthBtn').addEventListener('click',openMonth);
+  document.getElementById('year').addEventListener('change',()=>{ loadMonth(currentMonth); scheduleSave(); });
+  document.querySelectorAll('.month-buttons button').forEach(btn=> btn.addEventListener('click',()=>{ loadMonth(btn.dataset.month); scheduleSave(); }));
+
   try{ const ctx=JSON.parse(localStorage.getItem(CTX_KEY)||'null'); if(ctx && [...document.getElementById('year').options].some(o=>o.value==ctx.y)){ document.getElementById('year').value=ctx.y; loadMonth(ctx.m); return; } }catch{}
   const m=String(new Date().getMonth()+1).padStart(2,'0'); loadMonth(m);
 });
 
-if('serviceWorker' in navigator){ window.addEventListener('load',()=>{ navigator.serviceWorker.register('sw.js'); }); }
+// Service worker – version bump to bust old caches
+if('serviceWorker' in navigator){ window.addEventListener('load',()=>{ navigator.serviceWorker.register('sw.js?v=112full'); }); }
