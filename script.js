@@ -1,126 +1,141 @@
-// ===== Hjälp & formattering =====
+// ===== Format & utils =====
 const fmtKr=new Intl.NumberFormat('sv-SE',{style:'currency',currency:'SEK',maximumFractionDigits:0});
-function kr(n){return fmtKr.format(Math.round(n||0))}
-function parseDec(s){ if(s==null) return 0; const v=String(s).trim().replace(',','.'); const n=parseFloat(v); return isNaN(n)?0:n }
-
-// Basfält
-const STATIC_FIELDS=['period','namn','lon','formaner','barnbidrag','ink_ovrigt','boende','bredband','telefoni','barnomsorg1','barnomsorg2','fackforbund','personfors','barnfors','djurfors','hemfors','bilfors','fors_ovrigt','stream_netflix','stream_spotify','stream_hbo','stream_ovrigt1','stream_ovrigt2','mat','hushall','klader','nojen','halsa','energi','ror_ovrigt','bransle','service','skatt','parkering','fordon_ovrigt','spar1','spar2','spar3','spar4','spar5','spar6','skuld'];
-let currentMonth='01'; const CTX_KEY='budgetV92LastContext';
+const kr=n=>fmtKr.format(Math.round(n||0));
+const parseDec=s=>{ if(s==null) return 0; const v=String(s).trim().replace(',','.'); const n=parseFloat(v); return isNaN(n)?0:n };
 
 function Y(){return document.getElementById('year').value}
-function key(m){return `budgetV92_${Y()}-${m}`}
+let currentMonth='01'; const CTX_KEY='budgetV10LastContext';
+const HIDDEN_KEY='budgetV10_hidden';
+const SHARED_KEY='budgetV10_shared';
 
-// ===== Dynamiska betalare =====
-function readPayers(){ const rows=[...document.querySelectorAll('.payer-row')]; return rows.map(r=>({ name:r.querySelector('.p-name').value||'', salary: parseDec(r.querySelector('.p-salary').value||'') })) }
-function renderPayers(list){ const wrap=document.getElementById('payersList'); wrap.innerHTML=''; (list||[]).forEach(p=> addPayerRow(p.name, p.salary)); }
-function addPayerRow(name='', salary=''){ const wrap=document.getElementById('payersList'); const row=document.createElement('div'); row.className='payer-row'; row.innerHTML=`<input class="p-name" type="text" placeholder="Namn" value="${name}"><input class="p-salary" type="text" inputmode="decimal" placeholder="Lön" value="${salary}"><button class="del" title="Ta bort">🗑️</button>`; row.querySelector('.p-name').addEventListener('input',()=>{ calc(); scheduleSave(); }); row.querySelector('.p-salary').addEventListener('input',()=>{ calc(); scheduleSave(); }); row.querySelector('.del').addEventListener('click',()=>{ row.remove(); calc(); scheduleSave(); }); wrap.appendChild(row); }
+// ===== Icon mapping for categories =====
+function iconForName(name){ const n=(name||'').toLowerCase(); const M=[ [/hyra|bolån|boende|hus|lägenhet/,'🏠'], [/el|värme|energi|ström/,'⚡'], [/internet|bredband|wifi|fiber/,'🌐'], [/telefon|mobil|telef/,'📞'], [/mat|livs|ica|coop|handla/,'🛒'], [/kläder|skor|jacka|byxor/,'👟'], [/nöje|bio|underhållning|spel|game/,'🎉'], [/halsa|hälsa|gym|träning/,'💪'], [/bil|fordon|service|verkstad/,'🚗'], [/bränsle|bensin|diesel|laddning/,'⛽'], [/parkering|p-bot|pavgift/,'🅿️'], [/skatt|besiktning/,'🧾'], [/försäkring|hemförsäkring|bilförsäkring|personförsäkring|barnförsäkring/,'🛡️'], [/netflix|viaplay|hbo|max|disney|prime|stream/,'🎬'], [/spotify|musik|tidal|apple music/,'🎵'], [/barn|förskola|dagis|skola/,'👶'], [/fack|fackförbund|unionen|byggnads/,'🧰'], [/djur|hund|katt|veterinär/,'🐾'], [/spar|buffert|målspar|amortering/,'🐷'], [/skuld|lån/,'📉'], [/hushåll|toapapper|städ|förbrukning/,'🧼'] ]; for(const [re,ico] of M){ if(re.test(n)) return ico } return '🧩' }
 
-// ===== Egna kategorier (custom) =====
-function addCustomRow(containerId, name='', value=''){ const wrap=document.getElementById(containerId); const row=document.createElement('div'); row.className='custom-row'; row.innerHTML=`<input class="c-name" type="text" placeholder="Kategori" value="${name}"><input class="c-val" type="text" inputmode="decimal" placeholder="Belopp" value="${value}"><button class="del" title="Ta bort">🗑️</button>`; row.querySelector('.c-name').addEventListener('input',()=>{ calc(); scheduleSave(); }); row.querySelector('.c-val').addEventListener('input',()=>{ calc(); scheduleSave(); }); row.querySelector('.del').addEventListener('click',()=>{ row.remove(); calc(); scheduleSave(); }); wrap.appendChild(row); }
-function readCustom(containerId){ return [...document.querySelectorAll(`#${containerId} .custom-row`)].map(r=>({ name:r.querySelector('.c-name').value||'', value: parseDec(r.querySelector('.c-val').value||'') })) }
+// ===== Hidden / Shared helpers =====
+const getHidden=()=>{ try{ return JSON.parse(localStorage.getItem(HIDDEN_KEY)||'[]') }catch{ return [] } };
+const setHidden=arr=>localStorage.setItem(HIDDEN_KEY, JSON.stringify(arr||[]));
+const isHidden=id=>getHidden().includes(id);
+const getShared=()=>{ try{ return JSON.parse(localStorage.getItem(SHARED_KEY)||'[]') }catch{ return [] } };
+const setShared=arr=>localStorage.setItem(SHARED_KEY, JSON.stringify(arr||[]));
+const isShared=id=>getShared().includes(id);
 
-// ===== Dölj bas-kategorier =====
-function toggleHideCat(label){ const id=label.dataset.id; label.classList.toggle('hidden'); const hidden=getHidden(); if(label.classList.contains('hidden')){ if(!hidden.includes(id)) hidden.push(id); } else { const i=hidden.indexOf(id); if(i>=0) hidden.splice(i,1); } setHidden(hidden); calc(); scheduleSave(); }
-function getHidden(){ try{ return JSON.parse(localStorage.getItem('budgetV92_hidden')||'[]'); }catch{ return [] } }
-function setHidden(arr){ localStorage.setItem('budgetV92_hidden', JSON.stringify(arr||[])); }
-function isHidden(id){ return getHidden().includes(id) }
+const toggleHideCat=(label)=>{ const id=label.dataset.id; const h=getHidden(); label.classList.toggle('hidden'); if(label.classList.contains('hidden')){ if(!h.includes(id)) h.push(id) } else { const i=h.indexOf(id); if(i>=0) h.splice(i,1) } setHidden(h); calc(); scheduleSave(); };
+const toggleShareCat=(label)=>{ const id=label.dataset.id; const s=getShared(); label.classList.toggle('share'); if(label.classList.contains('share')){ if(!s.includes(id)) s.push(id) } else { const i=s.indexOf(id); if(i>=0) s.splice(i,1) } setShared(s); calc(); scheduleSave(); };
 
-// ===== Spara/ladda =====
-let saveTimer=null; function scheduleSave(){ clearTimeout(saveTimer); saveTimer=setTimeout(()=>{ saveMonth(); saveCtx(); },300) }
-function saveMonth(){ const d={}; STATIC_FIELDS.forEach(id=>{const el=document.getElementById(id); if(el) d[id]=el.value}); d['_payers']=readPayers(); d['_fixedCustom']=readCustom('fixedCustom'); d['_varCustom']=readCustom('varCustom'); d['_saveCustom']=readCustom('saveCustom'); d['_hidden']=getHidden(); localStorage.setItem(key(currentMonth), JSON.stringify(d)); }
+// ===== Persons (huvudpersoner) =====
+function defaultPersons(){ return [{name:'Du', salary:0}] }
+function readPersons(){ return [...document.querySelectorAll('.person-card')].map(card=>({ name: card.querySelector('.name').value||'Du', salary: parseDec(card.querySelector('.salary').value||'') })) }
+function renderPersons(list){ const grid=document.getElementById('personGrid'); grid.innerHTML=''; (list||defaultPersons()).forEach((p,i)=> addPersonCard(p.name,p.salary, i===0)); }
+function addPersonCard(name='Du', salary='', isPrimary=false){ const grid=document.getElementById('personGrid'); const card=document.createElement('div'); card.className='person-card'; card.innerHTML=`<div class="head"><span class="ico">${isPrimary?'🧑':'👤'}</span><input class="name" type="text" placeholder="Namn" value="${name}"></div><input class="salary" type="text" inputmode="decimal" placeholder="Lön" value="${salary}"><button class="del" ${isPrimary?'disabled':''} title="Ta bort">🗑️</button>`; const nameEl=card.querySelector('.name'); const salEl=card.querySelector('.salary'); nameEl.addEventListener('input',()=>{ calc(); scheduleSave(); updateSharesUI(); }); salEl.addEventListener('input',()=>{ calc(); scheduleSave(); updateSharesUI(); }); card.querySelector('.del').addEventListener('click',()=>{ if(!isPrimary){ card.remove(); calc(); scheduleSave(); updateSharesUI(); }}); grid.appendChild(card); }
+
+// ===== Custom categories (same layout + auto‑icon) =====
+let customIdSeq=0;
+function makeCustomLabel(section, name='', value='', share=false){ const label=document.createElement('label'); label.className='cat custom'; const id=`c_${section}_${++customIdSeq}`; label.dataset.id=id; label.dataset.section=section; if(share) label.classList.add('share'); const ico=iconForName(name); label.innerHTML=`<div class="cat-header"><span class="ico">${ico}</span><input class="c-name" type="text" placeholder="Kategori" value="${name}"></div><input class="c-val" type="text" inputmode="decimal" placeholder="Belopp" value="${value}"><button class="delCat" title="Ta bort">🗑️</button><button class="shareCat" title="Delas">🔗</button>`; label.querySelector('.c-name').addEventListener('input',(e)=>{ label.querySelector('.ico').textContent=iconForName(e.target.value); calc(); scheduleSave(); updateRowShare(label); }); label.querySelector('.c-val').addEventListener('input',()=>{ calc(); scheduleSave(); updateRowShare(label); }); label.querySelector('.delCat').addEventListener('click',()=>{ label.remove(); calc(); scheduleSave(); }); label.querySelector('.shareCat').addEventListener('click',()=>{ label.classList.toggle('share'); calc(); scheduleSave(); updateRowShare(label); }); return label }
+function addCustomTo(section){ const gridId=section==='fixed'?'fixedBaseGrid':section==='var'?'varBaseGrid':'saveBaseGrid'; const grid=document.getElementById(gridId); const label=makeCustomLabel(section,'','', false); grid.appendChild(label); calc(); scheduleSave(); }
+function readCustom(section){ const gridId=section==='fixed'?'fixedBaseGrid':section==='var'?'varBaseGrid':'saveBaseGrid'; return [...document.querySelectorAll(`#${gridId} label.custom`)].map(l=>({ name:l.querySelector('.c-name').value||'', value: parseDec(l.querySelector('.c-val').value||''), share: l.classList.contains('share') })) }
+
+// ===== Save / Load =====
+let saveTimer=null; const scheduleSave=()=>{ clearTimeout(saveTimer); saveTimer=setTimeout(()=>{ saveMonth(); saveCtx(); },300) };
+const key=m=>`budgetV10_${Y()}-${m}`;
+function saveMonth(){ const ids=['period','namn','formaner','barnbidrag','ink_ovrigt','boende','bredband','telefoni','barnomsorg1','barnomsorg2','fackforbund','personfors','barnfors','djurfors','hemfors','bilfors','fors_ovrigt','stream_netflix','stream_spotify','stream_hbo','stream_ovrigt1','stream_ovrigt2','mat','hushall','klader','nojen','halsa','energi','ror_ovrigt','bransle','service','skatt','parkering','fordon_ovrigt','spar1','spar2','spar3','spar4','spar5','spar6','skuld']; const d={}; ids.forEach(id=>{ const el=document.getElementById(id); if(el) d[id]=el.value }); d['_persons']=readPersons(); d['_fixedCustom']=readCustom('fixed'); d['_varCustom']=readCustom('var'); d['_saveCustom']=readCustom('save'); d['_hidden']=getHidden(); d['_shared']=getShared(); d['_paidShares']=readPaidShares(); localStorage.setItem(key(currentMonth), JSON.stringify(d)); }
 function saveCtx(){ localStorage.setItem(CTX_KEY, JSON.stringify({y:Y(), m:currentMonth})) }
-function loadMonth(m){ currentMonth=m; document.querySelectorAll('.month-buttons button').forEach(b=>b.classList.toggle('active',b.dataset.month===m)); const raw=localStorage.getItem(key(m)); STATIC_FIELDS.forEach(id=>{const el=document.getElementById(id); if(el) el.value='' }); renderPayers([]); ['fixedCustom','varCustom','saveCustom'].forEach(id=>document.getElementById(id).innerHTML='');
-  // reset hidden visning enligt lagrad state
-  document.querySelectorAll('label.cat').forEach(l=>{ l.classList.remove('hidden'); if(isHidden(l.dataset.id)) l.classList.add('hidden'); });
-  if(raw){ try{ const d=JSON.parse(raw); STATIC_FIELDS.forEach(id=>{const el=document.getElementById(id); if(el && d[id]!==undefined) el.value=d[id] }); renderPayers(d['_payers']||[]); (d['_fixedCustom']||[]).forEach(c=>addCustomRow('fixedCustom',c.name,c.value)); (d['_varCustom']||[]).forEach(c=>addCustomRow('varCustom',c.name,c.value)); (d['_saveCustom']||[]).forEach(c=>addCustomRow('saveCustom',c.name,c.value)); setHidden(d['_hidden']||getHidden()); }catch{} }
-  calc(); updatePeriod(); updateYearSummary(); drawPie(); updateGamify(); }
-function resetMonth(){ STATIC_FIELDS.forEach(id=>{const el=document.getElementById(id); if(el) el.value='' }); renderPayers([]); ['fixedCustom','varCustom','saveCustom'].forEach(id=>document.getElementById(id).innerHTML=''); saveMonth(); calc(); drawPie(); updateGamify(); }
-function copyPrev(){ const n=parseInt(currentMonth,10); const pm=n>1? String(n-1).padStart(2,'0'):null; if(!pm) return alert('Ingen föregående månad'); const raw=localStorage.getItem(key(pm)); if(!raw) return alert('Föregående månad saknar data'); try{ const d=JSON.parse(raw); STATIC_FIELDS.forEach(id=>{const el=document.getElementById(id); if(el) el.value=d[id]||'' }); renderPayers(d['_payers']||[]); ['fixedCustom','varCustom','saveCustom'].forEach(id=>document.getElementById(id).innerHTML=''); (d['_fixedCustom']||[]).forEach(c=>addCustomRow('fixedCustom',c.name,c.value)); (d['_varCustom']||[]).forEach(c=>addCustomRow('varCustom',c.name,c.value)); (d['_saveCustom']||[]).forEach(c=>addCustomRow('saveCustom',c.name,c.value)); setHidden(d['_hidden']||getHidden()); calc(); scheduleSave(); }catch{} }
+function loadMonth(m){ currentMonth=m; document.querySelectorAll('.month-buttons button').forEach(b=>b.classList.toggle('active',b.dataset.month===m)); const ids=['period','namn','formaner','barnbidrag','ink_ovrigt','boende','bredband','telefoni','barnomsorg1','barnomsorg2','fackforbund','personfors','barnfors','djurfors','hemfors','bilfors','fors_ovrigt','stream_netflix','stream_spotify','stream_hbo','stream_ovrigt1','stream_ovrigt2','mat','hushall','klader','nojen','halsa','energi','ror_ovrigt','bransle','service','skatt','parkering','fordon_ovrigt','spar1','spar2','spar3','spar4','spar5','spar6','skuld']; ids.forEach(id=>{ const el=document.getElementById(id); if(el) el.value='' }); ['fixedBaseGrid','varBaseGrid','saveBaseGrid'].forEach(g=>{ document.querySelectorAll(`#${g} label.custom`).forEach(n=>n.remove()); });
+  // Reset hidden/shared visual
+  document.querySelectorAll('label.cat').forEach(l=>{ l.classList.remove('hidden'); l.classList.remove('share'); if(isHidden(l.dataset.id)) l.classList.add('hidden'); if(isShared(l.dataset.id)) l.classList.add('share'); });
+  // Persons
+  renderPersons(defaultPersons());
+  const raw=localStorage.getItem(key(m)); if(raw){ try{ const d=JSON.parse(raw); ids.forEach(id=>{ const el=document.getElementById(id); if(el && d[id]!==undefined) el.value=d[id] }); renderPersons(d['_persons']&&d['_persons'].length? d['_persons']: defaultPersons()); (d['_fixedCustom']||[]).forEach(c=>{ const l=makeCustomLabel('fixed', c.name, c.value, !!c.share); document.getElementById('fixedBaseGrid').appendChild(l); }); (d['_varCustom']||[]).forEach(c=>{ const l=makeCustomLabel('var', c.name, c.value, !!c.share); document.getElementById('varBaseGrid').appendChild(l); }); (d['_saveCustom']||[]).forEach(c=>{ const l=makeCustomLabel('save', c.name, c.value, !!c.share); document.getElementById('saveBaseGrid').appendChild(l); }); setHidden(d['_hidden']||getHidden()); setShared(d['_shared']||getShared()); setPaidShares(d['_paidShares']||[]); }catch{} }
+  calc(); updatePeriod(); updateYearSummary(); drawPie(); updateGamify(); updateSharesUI(); }
+function resetMonth(){ ['fixedBaseGrid','varBaseGrid','saveBaseGrid'].forEach(g=>{ document.querySelectorAll(`#${g} label.custom`).forEach(n=>n.remove()); }); renderPersons(defaultPersons()); saveMonth(); calc(); drawPie(); updateGamify(); updateSharesUI(); }
+function copyPrev(){ const n=parseInt(currentMonth,10); const pm=n>1? String(n-1).padStart(2,'0'):null; if(!pm) return alert('Ingen föregående månad'); const raw=localStorage.getItem(key(pm)); if(!raw) return alert('Föregående månad saknar data'); try{ const d=JSON.parse(raw); ['fixedBaseGrid','varBaseGrid','saveBaseGrid'].forEach(g=>{ document.querySelectorAll(`#${g} label.custom`).forEach(n=>n.remove()); }); renderPersons(defaultPersons()); Object.keys(d).forEach(id=>{ const el=document.getElementById(id); if(el) el.value=d[id]||'' }); renderPersons(d['_persons']&&d['_persons'].length? d['_persons']: defaultPersons()); (d['_fixedCustom']||[]).forEach(c=>{ const l=makeCustomLabel('fixed', c.name, c.value, !!c.share); document.getElementById('fixedBaseGrid').appendChild(l); }); (d['_varCustom']||[]).forEach(c=>{ const l=makeCustomLabel('var', c.name, c.value, !!c.share); document.getElementById('varBaseGrid').appendChild(l); }); (d['_saveCustom']||[]).forEach(c=>{ const l=makeCustomLabel('save', c.name, c.value, !!c.share); document.getElementById('saveBaseGrid').appendChild(l); }); setHidden(d['_hidden']||getHidden()); setShared(d['_shared']||getShared()); setPaidShares(d['_paidShares']||[]); calc(); scheduleSave(); updateSharesUI(); }catch{} }
 
-// ===== Beräkningar =====
+// ===== Paid shares =====
+function readPaidShares(){ return [...document.querySelectorAll('.person-share')].map(div=>({ name:div.dataset.name, paid: parseDec(div.querySelector('.paid').value||'') })) }
+function setPaidShares(arr){ const list=document.getElementById('sharePeople'); list.innerHTML=''; const persons=readPersons(); const map=new Map((arr||[]).map(x=>[x.name,x.paid])); persons.forEach(p=>{ const paid=map.get(p.name)||0; const row=document.createElement('div'); row.className='person-share'; row.dataset.name=p.name; const andel=salaryTotal()>0? (p.salary/salaryTotal()*100):0; row.innerHTML=`<div class="row"><span><strong>${p.name}</strong> — Andel: ${andel.toFixed(1)}%</span><span>Skall: <strong class="skall">0 kr</strong></span><span>Betalat: <input class="paid" type="text" inputmode="decimal" value="${paid}"></span><span>Progress: <strong class="progress">0%</strong></span><span>Saldo: <strong class="saldo">0 kr</strong></span></div><div class="bar"><div></div></div>`; row.querySelector('.paid').addEventListener('input',()=>{ calc(); scheduleSave(); updateSharesUI(); }); list.appendChild(row); }); }
+
+function salaryTotal(){ const persons=readPersons(); return persons.reduce((s,p)=> s+(p.salary||0),0) }
+
+// ===== Sums & per-row chips =====
 function n(id){const el=document.getElementById(id); return parseDec(el?el.value:'') }
-function sumCustom(listId){ return readCustom(listId).reduce((s,c)=> s+(c.value||0),0) }
 function sumSection(ids){ const hidden=getHidden(); return ids.reduce((s,id)=> s + (hidden.includes(id)?0:n(id)),0) }
-function calc(){ const mySalary=n('lon'); const payers=readPayers(); const othersSalary=payers.reduce((s,p)=> s + (p.salary||0), 0);
-  const income = mySalary + othersSalary + n('formaner') + n('barnbidrag') + n('ink_ovrigt');
+function sumCustom(section, onlyShared=false){ const gridId=section==='fixed'?'fixedBaseGrid':section==='var'?'varBaseGrid':'saveBaseGrid'; return [...document.querySelectorAll(`#${gridId} label.custom`)].reduce((s,l)=>{ const val=parseDec(l.querySelector('.c-val').value||''); const share=l.classList.contains('share'); return s + ((onlyShared? share: true)? val:0) },0) }
+
+function ensureSplitRow(label){ let sr=label.querySelector('.split-row'); if(!sr){ sr=document.createElement('div'); sr.className='split-row'; label.appendChild(sr); } return sr }
+function updateRowShare(label){ const hidden=getHidden(); const id=label.dataset.id; const shared=label.classList.contains('share'); let amount=0; if(label.classList.contains('custom')){ amount=parseDec(label.querySelector('.c-val').value||'') } else { amount= hidden.includes(id)?0:n(id) } const persons=readPersons(); const total=salaryTotal(); const sr=ensureSplitRow(label); sr.innerHTML=''; if(!shared || amount<=0 || total<=0){ sr.style.display='none'; return } sr.style.display='flex'; persons.forEach(p=>{ const share = amount * ((p.salary||0)/total); const pill=document.createElement('span'); pill.className='split-pill'; pill.textContent=`${p.name}: ${kr(share)}`; sr.appendChild(pill); }) }
+function updateAllRowShares(){ document.querySelectorAll('label.cat').forEach(updateRowShare); document.querySelectorAll('label.custom').forEach(updateRowShare); }
+
+// ===== Calc & UI updates =====
+function calc(){
+  const persons=readPersons(); const salaries=persons.reduce((s,p)=> s+(p.salary||0),0);
+  const income = salaries + n('formaner') + n('barnbidrag') + n('ink_ovrigt');
   document.getElementById('sum_income').textContent=kr(income); document.getElementById('kpiIncome').textContent=kr(income);
   const fors = sumSection(['personfors','barnfors','djurfors','hemfors','bilfors','fors_ovrigt']); document.getElementById('sum_fors').textContent=kr(fors);
   const stream = sumSection(['stream_netflix','stream_spotify','stream_hbo','stream_ovrigt1','stream_ovrigt2']); document.getElementById('sum_streaming').textContent=kr(stream);
-  const fixedBase = sumSection(['boende','bredband','telefoni','barnomsorg1','barnomsorg2','fackforbund']) + fors + stream;
-  const fixedCustom = sumCustom('fixedCustom'); const fixed = fixedBase + fixedCustom; document.getElementById('kpiFixed').textContent=kr(fixed); document.getElementById('sum_fixed').textContent=kr(fixed);
+  const fixed = sumSection(['boende','bredband','telefoni','barnomsorg1','barnomsorg2','fackforbund']) + fors + stream + sumCustom('fixed'); document.getElementById('sum_fixed').textContent=kr(fixed); document.getElementById('kpiFixed').textContent=kr(fixed);
   const fordon = sumSection(['bransle','service','skatt','parkering','fordon_ovrigt']); document.getElementById('sum_fordon').textContent=kr(fordon);
-  const varBase = sumSection(['mat','hushall','klader','nojen','halsa','energi','ror_ovrigt']) + fordon; const varCustom=sumCustom('varCustom'); const vari = varBase + varCustom; document.getElementById('sum_var').textContent=kr(vari); document.getElementById('kpiVar').textContent=kr(vari);
-  const sparBase = sumSection(['spar1','spar2','spar3','spar4','spar5','spar6','skuld']); const sparCustom=sumCustom('saveCustom'); const spar = sparBase + sparCustom; document.getElementById('sum_spar').textContent=kr(spar); document.getElementById('kpiSave').textContent=kr(spar);
+  const vari = sumSection(['mat','hushall','klader','nojen','halsa','energi','ror_ovrigt']) + fordon + sumCustom('var'); document.getElementById('sum_var').textContent=kr(vari); document.getElementById('kpiVar').textContent=kr(vari);
+  const spar = sumSection(['spar1','spar2','spar3','spar4','spar5','spar6','skuld']) + sumCustom('save'); document.getElementById('sum_spar').textContent=kr(spar); document.getElementById('kpiSave').textContent=kr(spar);
   const res = income - fixed - vari - spar; document.getElementById('resultat').textContent=kr(res); document.getElementById('kpiRes').textContent=kr(res);
-  const spent = fixed+vari; const left = Math.max(0, income - spent); const pct = income>0? Math.round(left*100/income):0; document.getElementById('leftPct').textContent=pct+"%"; document.getElementById('leftBar').style.width=pct+"%";
+  const spent=fixed+vari; const left=Math.max(0, income-spent); const pct= income>0? Math.round(left*100/income):0; document.getElementById('leftPct').textContent=pct+'%'; document.getElementById('leftBar').style.width=pct+'%';
+  updateAllRowShares(); updateSharesUI();
+}
+
+function updateSharesUI(){
+  const persons=readPersons(); const total=salaryTotal(); const list=document.getElementById('sharePeople'); if(!list) return; const sharedBaseIds=[ 'boende','bredband','telefoni','barnomsorg1','barnomsorg2','fackforbund','personfors','barnfors','djurfors','hemfors','bilfors','fors_ovrigt','stream_netflix','stream_spotify','stream_hbo','stream_ovrigt1','stream_ovrigt2','mat','hushall','klader','nojen','halsa','energi','ror_ovrigt','bransle','service','skatt','parkering','fordon_ovrigt' ]; const hidden=getHidden(); const sharedSet=getShared(); const sharedBaseSum = sharedBaseIds.reduce((s,id)=> s + (hidden.includes(id)?0: (sharedSet.includes(id)? n(id):0)), 0); const sharedCustomSum = sumCustom('fixed', true) + sumCustom('var', true); const sharedTotal = sharedBaseSum + sharedCustomSum; document.getElementById('sharedTotal').textContent=kr(sharedTotal); document.getElementById('salaryTotal').textContent=kr(total); const p = total>0? (sharedTotal / total): 0; document.getElementById('sharePct').textContent=(p*100).toFixed(1)+'%';
+  // Update existing rows or rebuild if empty
+  if(!list.children.length){ setPaidShares([]); }
+  [...document.querySelectorAll('.person-share')].forEach(div=>{ const name=div.dataset.name; const person=persons.find(x=> (x.name||'')===name ); const salary=person? (person.salary||0):0; const andel = total>0? (salary/total):0; const skall = sharedTotal * andel; const paid = parseDec(div.querySelector('.paid').value||''); const progress = skall>0? Math.round(paid*100/skall): 0; const saldo = paid - skall; div.querySelector('.skall').textContent=kr(skall); div.querySelector('.progress').textContent=(progress)+'%'; div.querySelector('.saldo').textContent=kr(saldo); const bar=div.querySelector('.bar>div'); bar.style.width=(Math.min(100,Math.max(0,progress)))+'%'; div.classList.remove('pos','neg'); div.classList.add(saldo>=0?'pos':'neg'); });
 }
 
 function updatePeriod(){ const names={'01':'Jan','02':'Feb','03':'Mar','04':'Apr','05':'Maj','06':'Jun','07':'Jul','08':'Aug','09':'Sep','10':'Okt','11':'Nov','12':'Dec'}; const el=document.getElementById('period'); if(el) el.value=`${names[currentMonth]} ${Y()}` }
 
-function getMonthTotals(m){ const raw=localStorage.getItem(key(m)); if(!raw) return {income:0,fixed:0,var:0,spar:0,res:0}; try{ const d=JSON.parse(raw); const dec=(x)=>parseDec(d[x]); const payers=(d['_payers']||[]).reduce((s,p)=> s+(parseDec(p.salary)||0),0); const hidden=d['_hidden']||[]; const H=(id)=> hidden.includes(id)?0:dec(id);
-  const income = dec('lon') + payers + dec('formaner') + dec('barnbidrag') + dec('ink_ovrigt');
-  const fors = H('personfors')+H('barnfors')+H('djurfors')+H('hemfors')+H('bilfors')+H('fors_ovrigt');
-  const stream = H('stream_netflix')+H('stream_spotify')+H('stream_hbo')+H('stream_ovrigt1')+H('stream_ovrigt2');
-  const fixedBase = H('boende')+H('bredband')+H('telefoni')+H('barnomsorg1')+H('barnomsorg2')+H('fackforbund') + fors + stream; const fixedCustom = (d['_fixedCustom']||[]).reduce((s,c)=> s+(parseDec(c.value)||0),0); const fixed = fixedBase + fixedCustom;
-  const fordon = H('bransle')+H('service')+H('skatt')+H('parkering')+H('fordon_ovrigt');
-  const varBase = H('mat')+H('hushall')+H('klader')+H('nojen')+H('halsa')+H('energi')+H('ror_ovrigt') + fordon; const varCustom=(d['_varCustom']||[]).reduce((s,c)=> s+(parseDec(c.value)||0),0); const vari = varBase + varCustom;
-  const sparBase = H('spar1')+H('spar2')+H('spar3')+H('spar4')+H('spar5')+H('spar6')+H('skuld'); const sparCustom=(d['_saveCustom']||[]).reduce((s,c)=> s+(parseDec(c.value)||0),0); const spar = sparBase + sparCustom;
-  const res = income - fixed - vari - spar; return {income,fixed,var:vari,spar,res}; }catch{return {income:0,fixed:0,var:0,spar:0,res:0};} }
+function getMonthTotals(m){ const raw=localStorage.getItem(key(m)); if(!raw) return {income:0,fixed:0,var:0,spar:0,res:0}; try{ const d=JSON.parse(raw); const dec=x=>parseDec(d[x]); const hidden=d['_hidden']||[]; const H=id=> hidden.includes(id)?0:dec(id); const persons=(d['_persons']||[{name:'Du',salary:parseDec(d['lon']||0)}]).reduce((s,p)=> s+(parseDec(p.salary)||0),0); const income = persons + dec('formaner') + dec('barnbidrag') + dec('ink_ovrigt'); const fors = H('personfors')+H('barnfors')+H('djurfors')+H('hemfors')+H('bilfors')+H('fors_ovrigt'); const stream = H('stream_netflix')+H('stream_spotify')+H('stream_hbo')+H('stream_ovrigt1')+H('stream_ovrigt2'); const fixedCustom=(d['_fixedCustom']||[]).reduce((s,c)=> s+(parseDec(c.value)||0),0); const fixed = (H('boende')+H('bredband')+H('telefoni')+H('barnomsorg1')+H('barnomsorg2')+H('fackforbund')) + fors + stream + fixedCustom; const fordon = H('bransle')+H('service')+H('skatt')+H('parkering')+H('fordon_ovrigt'); const varCustom=(d['_varCustom']||[]).reduce((s,c)=> s+(parseDec(c.value)||0),0); const vari = (H('mat')+H('hushall')+H('klader')+H('nojen')+H('halsa')+H('energi')+H('ror_ovrigt')) + fordon + varCustom; const saveCustom=(d['_saveCustom']||[]).reduce((s,c)=> s+(parseDec(c.value)||0),0); const spar = (H('spar1')+H('spar2')+H('spar3')+H('spar4')+H('spar5')+H('spar6')+H('skuld')) + saveCustom; const res = income - fixed - vari - spar; return {income,fixed,var:vari,spar,res}; }catch{ return {income:0,fixed:0,var:0,spar:0,res:0} } }
 
-function updateYearSummary(){ const ms=['01','02','03','04','05','06','07','08','09','10','11','12']; let yi=0,yf=0,yv=0,ys=0,yr=0; ms.forEach(m=>{const t=getMonthTotals(m); yi+=t.income; yf+=t.fixed; yv+=t.var; ys+=t.spar; yr+=t.res;}); document.getElementById('y_income').textContent=kr(yi); document.getElementById('y_fixed').textContent=kr(yf); document.getElementById('y_var').textContent=kr(yv); document.getElementById('y_spar').textContent=kr(ys); document.getElementById('y_result').textContent=kr(yr); }
-
-// ===== CSV =====
-function exportMonthCSV(){ const rows=[["År",Y()],["Månad",currentMonth]]; const add=(a,b)=>rows.push([a,b]); const read=id=>{const el=document.getElementById(id); return el?el.value:''}; add('Period',read('period')); add('Namn',read('namn')); rows.push([]);
-  // Inkomster
-  add('Lön',read('lon')); add('Förmåner',read('formaner')); add('Barnbidrag',read('barnbidrag')); add('Övrig inkomst',read('ink_ovrigt')); add('Summa inkomster',document.getElementById('sum_income').textContent); rows.push(['Betalande i hushållet','Lön']); readPayers().forEach(p=> rows.push([p.name, p.salary])); rows.push([]);
+// ===== CSV/PDF =====
+function exportMonthCSV(){ const rows=[["År",Y()],["Månad",currentMonth]]; const add=(a,b)=>rows.push([a,b]); const read=id=>document.getElementById(id)?.value||''; rows.push([]);
+  // Persons
+  rows.push(['Person','Lön']); readPersons().forEach(p=> rows.push([p.name,p.salary])); rows.push([]);
+  add('Förmåner',read('formaner')); add('Barnbidrag',read('barnbidrag')); add('Övrig inkomst',read('ink_ovrigt')); add('Summa inkomster',document.getElementById('sum_income').textContent); rows.push([]);
   // Fasta
-  ['boende','bredband','telefoni','barnomsorg1','barnomsorg2','fackforbund','personfors','barnfors','djurfors','hemfors','bilfors','fors_ovrigt','stream_netflix','stream_spotify','stream_hbo','stream_ovrigt1','stream_ovrigt2'].forEach(id=> add(id, read(id)) ); rows.push(['Egna fasta','Belopp']); readCustom('fixedCustom').forEach(c=> rows.push([c.name, c.value])); add('Summa fasta',document.getElementById('sum_fixed').textContent); rows.push([]);
+  ['boende','bredband','telefoni','barnomsorg1','barnomsorg2','fackforbund','personfors','barnfors','djurfors','hemfors','bilfors','fors_ovrigt','stream_netflix','stream_spotify','stream_hbo','stream_ovrigt1','stream_ovrigt2'].forEach(id=> add(id, read(id)) ); rows.push(['Egna fasta','Belopp']); readCustom('fixed').forEach(c=> rows.push([c.name, c.value])); add('Summa fasta',document.getElementById('sum_fixed').textContent); rows.push([]);
   // Rörliga
-  ['mat','hushall','klader','nojen','halsa','energi','ror_ovrigt','bransle','service','skatt','parkering','fordon_ovrigt'].forEach(id=> add(id, read(id)) ); rows.push(['Egna rörliga','Belopp']); readCustom('varCustom').forEach(c=> rows.push([c.name, c.value])); add('Summa rörliga',document.getElementById('sum_var').textContent); rows.push([]);
+  ['mat','hushall','klader','nojen','halsa','energi','ror_ovrigt','bransle','service','skatt','parkering','fordon_ovrigt'].forEach(id=> add(id, read(id)) ); rows.push(['Egna rörliga','Belopp']); readCustom('var').forEach(c=> rows.push([c.name, c.value])); add('Summa rörliga',document.getElementById('sum_var').textContent); rows.push([]);
   // Spar/skuld
-  ['spar1','spar2','spar3','spar4','spar5','spar6','skuld'].forEach(id=> add(id, read(id)) ); rows.push(['Egna spar/skuld','Belopp']); readCustom('saveCustom').forEach(c=> rows.push([c.name, c.value])); add('Summa spar/skuld',document.getElementById('sum_spar').textContent); rows.push([]);
+  ['spar1','spar2','spar3','spar4','spar5','spar6','skuld'].forEach(id=> add(id, read(id)) ); rows.push(['Egna spar/skuld','Belopp']); readCustom('save').forEach(c=> rows.push([c.name, c.value])); add('Summa spar/skuld',document.getElementById('sum_spar').textContent); rows.push([]);
   add('Resultat',document.getElementById('resultat').textContent);
   const csv=rows.map(r=>r.join(';')).join('\n'); const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`budget_${Y()}-${currentMonth}.csv`; a.click(); URL.revokeObjectURL(url); }
-function exportYearCSV(){ const ms=['01','02','03','04','05','06','07','08','09','10','11','12']; const rows=[["År",Y()],[],['Månad','Inkomster','Fasta','Rörliga','Spar/Skuld','Resultat']]; ms.forEach(m=>{ const t=getMonthTotals(m); rows.push([m,t.income,t.fixed,t.var,t.spar,t.res]); }); const csv=rows.map(r=>r.join(';')).join('\n'); const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`budget_${Y()}_arsoversikt.csv`; a.click(); URL.revokeObjectURL(url); }
 
-// ===== PDF =====
-async function exportPDF(){ const { jsPDF } = window.jspdf; const doc = new jsPDF({orientation:'p', unit:'pt'});
- const margin=40; let y=margin; const T=(t,val='')=>{ doc.text(`${t} ${val}`, margin, y); y+=18; }
- doc.setFontSize(16); doc.text('Hushållsbudget – Månad', margin, y); y+=24; doc.setFontSize(12);
- T('Period:', document.getElementById('period').value); T('Namn:', document.getElementById('namn').value); y+=6;
- T('Inkomster:', document.getElementById('sum_income').textContent); T('Fasta:', document.getElementById('sum_fixed').textContent); T('Rörliga:', document.getElementById('sum_var').textContent); T('Spar/Skuld:', document.getElementById('sum_spar').textContent); T('Resultat:', document.getElementById('resultat').textContent); y+=12;
- const payers=readPayers(); if(payers.length){ doc.text('Betalande i hushållet:', margin, y); y+=18; payers.forEach(p=>{ doc.text(`• ${p.name}: ${p.salary} kr`, margin+16, y); y+=16; }); }
- doc.save(`budget_${Y()}-${currentMonth}.pdf`);
+async function exportPDF(){ const { jsPDF } = window.jspdf; const doc = new jsPDF({orientation:'p', unit:'pt'}); const m=40; let y=m; const T=(t,v='')=>{ doc.text(`${t} ${v}`, m, y); y+=18; };
+  doc.setFontSize(16); doc.text('Hushållsbudget – Månad', m, y); y+=24; doc.setFontSize(12);
+  T('Inkomster:', document.getElementById('sum_income').textContent); T('Fasta:', document.getElementById('sum_fixed').textContent); T('Rörliga:', document.getElementById('sum_var').textContent); T('Spar/Skuld:', document.getElementById('sum_spar').textContent); T('Resultat:', document.getElementById('resultat').textContent); y+=10;
+  const persons=readPersons(); if(persons.length){ doc.text('Huvudpersoner (lön):', m, y); y+=18; persons.forEach(p=>{ doc.text(`• ${p.name}: ${p.salary} kr`, m+16, y); y+=16; }); }
+  const sharedTotal=document.getElementById('sharedTotal').textContent; const sharePct=document.getElementById('sharePct').textContent; doc.text(`Delad summa: ${sharedTotal} | Procent av lön: ${sharePct}`, m, y); y+=18;
+  doc.save(`budget_${Y()}-${currentMonth}.pdf`);
 }
 
-// ===== Diagram =====
+// ===== Chart, tips, theme, gamify =====
 let pie; function drawPie(){ try{ const ctx=document.getElementById('pie'); if(!ctx) return; const data={ labels:['Fasta','Rörliga','Spar/Skuld'], datasets:[{ data:[ val('sum_fixed'), val('sum_var'), val('sum_spar') ], backgroundColor:['#f59e0b','#ef4444','#22c55e']}]}; if(pie) pie.destroy(); pie=new Chart(ctx,{type:'pie', data, options:{plugins:{legend:{position:'bottom'}}}});}catch{}}
 function val(id){ const txt=document.getElementById(id).textContent.replace(/[^0-9\-]/g,''); return parseInt(txt||'0',10) }
-
-// ===== Tips =====
-const TIPS=[ 'Sätt autogiro för sparande direkt efter löning.', 'Jämför försäkringar vartannat år.', 'Planera veckans mat – minska spontanköp.', 'Förhandla bolåneräntan årligen.', 'Rensa onödiga prenumerationer varje kvartal.' ];
-function nextTip(){ const t=TIPS[Math.floor(Math.random()*TIPS.length)]; document.getElementById('tipText').textContent=t }
-
-// ===== Gamification =====
-function getPoints(){ return parseInt(localStorage.getItem('budgetV92_points')||'0',10) }
-function setPoints(p){ localStorage.setItem('budgetV92_points', String(p)); document.getElementById('points').textContent=String(p) }
+const TIPS=['Sätt autogiro för sparande direkt efter löning.','Jämför försäkringar vartannat år.','Planera veckans mat – minska spontanköp.','Förhandla bolåneräntan årligen.','Rensa onödiga prenumerationer varje kvartal.'];
+const nextTip=()=>{ document.getElementById('tipText').textContent=TIPS[Math.floor(Math.random()*TIPS.length)] };
+const getPoints=()=>parseInt(localStorage.getItem('budgetV10_points')||'0',10);
+const setPoints=p=>{ localStorage.setItem('budgetV10_points', String(p)); document.getElementById('points').textContent=String(p) };
 function addBadge(name){ const b=document.createElement('span'); b.className='badge'; b.textContent=name; document.getElementById('badges').appendChild(b) }
 function updateGamify(){ const p0=getPoints(); let p=p0; document.getElementById('badges').innerHTML=''; const income=val('sum_income'); const res=val('kpiRes'); const save=val('sum_spar'); if(res>0) p+=1; if(income>0 && save>=0.1*income) p+=1; setPoints(p); if(p>=5) addBadge('Sparare 🌱'); if(p>=10) addBadge('Mästare 🏅'); if(p>=20) addBadge('Budget‑pro 👑'); }
+const applyTheme=()=>{ const t=localStorage.getItem('budgetV10_theme')||'light'; if(t==='dark') document.documentElement.setAttribute('data-theme','dark'); else document.documentElement.removeAttribute('data-theme') };
+const toggleTheme=()=>{ const dark=document.documentElement.getAttribute('data-theme')==='dark'; localStorage.setItem('budgetV10_theme', dark?'light':'dark'); applyTheme() };
 
-// ===== Theme =====
-function applyTheme(){ const t=localStorage.getItem('budgetV92_theme')||'light'; if(t==='dark') document.documentElement.setAttribute('data-theme','dark'); else document.documentElement.removeAttribute('data-theme') }
-function toggleTheme(){ const dark=document.documentElement.getAttribute('data-theme')==='dark'; localStorage.setItem('budgetV92_theme', dark?'light':'dark'); applyTheme() }
-
-// ===== Init & events =====
+// ===== Init =====
 window.addEventListener('DOMContentLoaded',()=>{
   applyTheme();
   document.getElementById('darkToggle').addEventListener('click',toggleTheme);
-  document.getElementById('addPayerBtn').addEventListener('click',()=>{ addPayerRow('', ''); calc(); scheduleSave(); });
-  document.getElementById('addFixedCustom').addEventListener('click',()=>{ addCustomRow('fixedCustom','',''); calc(); scheduleSave(); });
-  document.getElementById('addVarCustom').addEventListener('click',()=>{ addCustomRow('varCustom','',''); calc(); scheduleSave(); });
-  document.getElementById('addSaveCustom').addEventListener('click',()=>{ addCustomRow('saveCustom','',''); calc(); scheduleSave(); });
+  document.getElementById('addPersonBtn').addEventListener('click',()=>{ addPersonCard('Betalare', '', false); calc(); scheduleSave(); updateSharesUI(); });
+  document.getElementById('addFixedCustom').addEventListener('click',()=>{ addCustomTo('fixed'); });
+  document.getElementById('addVarCustom').addEventListener('click',()=>{ addCustomTo('var'); });
+  document.getElementById('addSaveCustom').addEventListener('click',()=>{ addCustomTo('save'); });
   document.querySelectorAll('input').forEach(el=>el.addEventListener('input',()=>{ calc(); scheduleSave(); drawPie(); updateGamify(); }));
   document.querySelectorAll('label.cat .hideCat').forEach(btn=> btn.addEventListener('click',(e)=>{ const label=e.target.closest('label.cat'); toggleHideCat(label); }));
+  document.querySelectorAll('label.cat .shareCat').forEach(btn=> btn.addEventListener('click',(e)=>{ const label=e.target.closest('label.cat'); toggleShareCat(label); updateRowShare(label); }));
   document.getElementById('year').addEventListener('change',()=>{ loadMonth(currentMonth); scheduleSave(); });
   document.querySelectorAll('.month-buttons button').forEach(btn=>btn.addEventListener('click',()=>{ loadMonth(btn.dataset.month); scheduleSave(); }));
   document.getElementById('copyPrevBtn').addEventListener('click',copyPrev);

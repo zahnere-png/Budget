@@ -7,6 +7,7 @@ header .title h1{margin:0;color:#fff;font-size:22px}
 header .subtitle{margin:4px 0 0;color:#e5e7eb;font-size:13px}
 header .pill{background:#0ea5e9;color:#ecfeff;padding:2px 8px;border-radius:999px;font-size:12px;margin-left:6px}
 header .header-actions button{border:1px solid #3b82f6;background:#1e293b;color:#fff;border-radius:10px;padding:8px 10px;cursor:pointer}
+
 nav.tabs{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:10px 16px;background:var(--paper);border-bottom:1px solid var(--line)}
 nav .year-picker select{padding:6px 10px;border:1px solid var(--line);background:transparent;border-radius:8px;color:var(--ink)}
 nav .month-buttons{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px}
@@ -28,23 +29,46 @@ section{margin:12px 0;background:var(--paper);border:1px solid var(--line);borde
 .kv li{display:flex;justify-content:space-between;background:var(--paper);border:1px dashed var(--line);border-radius:10px;padding:8px}
 .kv li.res{grid-column:1/-1;border-style:solid}
 
+/* Persons */
+.persons{margin-bottom:8px}
+.person-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.person-card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px;position:relative}
+.person-card .head{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.person-card .head .ico{font-size:20px}
+.person-card .name{flex:1}
+.person-card .salary{margin-top:6px}
+.person-card .del{position:absolute;right:8px;top:8px;background:transparent;color:#ef4444;border-color:#ef4444;border-radius:8px;padding:4px 6px}
+.person-actions{margin-top:6px}
+
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
 label{display:flex;flex-direction:column;font-size:12px;color:var(--muted);position:relative}
 input{margin-top:6px;padding:10px;border:1px solid var(--line);border-radius:8px;font-size:16px;background:transparent;color:var(--ink)}
 button{cursor:pointer;border:1px solid var(--line);background:var(--brand);color:#fff;border-radius:10px;padding:10px 14px;font-weight:600}
 button.secondary{background:transparent;color:var(--ink)}
 
+/* Category controls */
 .hideCat{position:absolute;right:8px;top:22px;border-color:#93c5fd;color:#2563eb;background:#eef2ff;padding:4px 6px;border-radius:8px;font-size:12px}
+.shareCat{position:absolute;right:50px;top:22px;border-color:#34d399;color:#065f46;background:#ecfdf5;padding:4px 6px;border-radius:8px;font-size:12px}
+label.share{border-color:#34d399}
 label.hidden{opacity:.45}
+
+/* Row chips for per‑rad delning */
+.split-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;color:var(--muted);font-size:12px}
+.split-pill{background:#eef2ff;color:#1e293b;border:1px solid #c7d2fe;border-radius:999px;padding:2px 8px}
 
 .total,.result,.subtotal{margin-top:10px;padding:10px;border-radius:8px;background:#fff7d6;border:1px solid #f1de97;font-weight:600}
 .badges{display:flex;gap:6px;flex-wrap:wrap}
 .badge{background:#fde68a;color:#92400e;border:1px solid #f59e0b;border-radius:999px;padding:4px 8px;font-size:12px}
 
-.custom-group{margin-top:10px}
-.custom-list{display:flex;flex-direction:column;gap:8px}
-.custom-row{display:grid;grid-template-columns:2fr 1fr auto;gap:8px;align-items:center}
-.custom-row input{width:100%}
-.custom-row button{background:transparent;color:#ef4444;border-color:#ef4444}
+/* Share section per person */
+.share-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin:8px 0}
+.share-people{display:flex;flex-direction:column;gap:10px}
+.person-share{border:1px dashed var(--line);border-radius:12px;padding:10px;background:var(--paper)}
+.person-share .row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:8px;align-items:center}
+.person-share .row strong{justify-self:end}
+.person-share .bar{height:8px;background:#e5e7eb;border-radius:999px;overflow:hidden;margin-top:6px}
+.person-share .bar>div{height:100%;width:0%;background:linear-gradient(90deg,#22c55e,#16a34a);transition:width .3s}
+.person-share.pos .bar>div{background:linear-gradient(90deg,#22c55e,#16a34a)}
+.person-share.neg .bar>div{background:linear-gradient(90deg,#ef4444,#f97316)}
 
 footer{color:var(--muted);text-align:center;padding:12px}
