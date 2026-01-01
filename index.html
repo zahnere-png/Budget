@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <meta name="theme-color" content="#1f4e79" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <title>Hushållsbudget v12.4.3 (fix: stabil inmatning vid delning)</title>
+  <title>Hushållsbudget v12.4.4 (fullrestore + stabil delning)</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <link rel="icon" sizes="192x192" href="icons/budget-192.png">
@@ -16,8 +16,8 @@
 <body>
 <header>
   <div class="title">
-    <h1>Hushållsbudget <span class="pill">v12.4.3</span></h1>
-    <p class="subtitle">Delning: manuellt belopp + % (utan fokus-hopp) • Budgetläge default OFF</p>
+    <h1>Hushållsbudget <span class="pill">v12.4.4</span></h1>
+    <p class="subtitle">Full återställning • Delning stabil • Budgetläge default OFF</p>
   </div>
   <div class="header-actions">
     <div id="periodTop" class="period-top">—</div>
@@ -98,11 +98,10 @@
     </div>
   </section>
 
-  <!-- Inkomster/Fasta/Rörliga/Spar/Delning/Audit/År som i v12.4.2 – hela UI:t renderas av script.js -->
-
+  <!-- Inkomster/Fasta/Rörliga/Spar/Delning/Audit/År renderas med script.js (full kod) -->
   <section class="sec share">
     <h2>Fördelning mellan betalare</h2>
-    <p class="help">Tryck 🔗 på en rad för att fördela. Nu‑% uppdateras live utan att fältet tappar fokus.</p>
+    <p class="help">Tryck 🔗 på en rad för att fördela. Nu‑% uppdateras live, utan att fältet tappar fokus.</p>
     <div class="share-summary">
       <div>Delad summa (fasta+rörliga): <strong id="sharedTotal">0 kr</strong></div>
       <div>Summa löner: <strong id="salaryTotal">0 kr</strong></div>
@@ -111,6 +110,27 @@
     <div class="share-people" id="sharePeople"></div>
   </section>
 
+  <section class="sec audit">
+    <h2>Avstämning (Budget vs Utfallet)</h2>
+    <div id="auditWrap">
+      <p class="help">Stäng månaden för att låsa utfallet. Budget måste vara <strong>på</strong> för att visas.</p>
+      <div id="auditTable"></div>
+    </div>
+  </section>
+
+  <section class="sec year">
+    <h2>Årsöversikt</h2>
+    <div class="year-summary">
+      <div>Totala inkomster: <span id="y_income">0 kr</span></div>
+      <div>Totala fasta utgifter: <span id="y_fixed">0 kr</span></div>
+      <div>Totala rörliga utgifter: <span id="y_var">0 kr</span></div>
+      <div>Totalt sparande/skuld: <span id="y_spar">0 kr</span></div>
+      <div><strong>Årsresultat:</strong> <span id="y_result">0 kr</span></div>
+    </div>
+    <div class="actions">
+      <button id="yearCsvBtn" class="secondary">Exportera års‑CSV</button>
+    </div>
+  </section>
 </main>
 
 <footer>
