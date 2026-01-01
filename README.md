@@ -1,14 +1,11 @@
-# Hushållsbudget v12.4 (period + delning manuellt)
+# Hushållsbudget v12.4.1 (delning + budget OFF)
 
-**Nyheter:**
-- **Månad + år i toppen** av appen (uppdateras vid månads-/årsbyte).
-- **Delningsknappen (🔗) per rad** har nu **manuella belopp per person** och visar **% av posten** samt **rekommenderad % (borde)** baserat på löneandel.
-- Övriga funktioner från v12.3 kvar: 💳 betalningslåda, dashboard, PWA/offline.
+**Tweaks enligt önskemål:**
+- **Delning (🔗)**: Raden visar **nu‑%** (utifrån beloppet i rutan) samt **borde‑%** (rekommenderad enligt löneandel). Rutan är **förifylld** med rekommenderat belopp eller ditt sparade manuella belopp, **placeholder** visar alltid rekommenderat belopp. **Vid fokus** på rutan **töms** värdet (focus‑clear) så du kan skriva vad som faktiskt betalats.
+- **Budgetläge default OFF** (global): Du tänder själv de rader du vill jobba med.
+- **Månad + år** visas **längst upp** i headern.
 
 ## Publicera
-1. Skapa repo (t.ex. `budget-pwa-v12.4`).
+1. Skapa repo (t.ex. `budget-pwa-v12.4.1`).
 2. Lägg upp allt i `main`.
 3. Settings → Pages → Source = **GitHub Actions**.
-
-## Tips
-- Efter deploy: **Ctrl+F5 / Cmd+Shift+R** eller unregister SW om du ser gammal cache.
