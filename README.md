@@ -1,15 +1,13 @@
-# Hushållsbudget v12.4.2 (full fix)
+# Hushållsbudget v12.4.3 (stabil delningsinmatning)
 
-Denna version återställer **hela UI:t** (v12.4) och inkluderar:
-- **Delning per rad (🔗)** med manuellt belopp per person + **nu‑%** och **borde‑%**.
-- **Månad + år i headern**.
-- **Budgetläge default OFF** vid första start.
-- Alla tidigare fixar (månader, dashboard, PWA, 💳 betalningslåda).
+**Nyhet:** Delningsrutan (🔗) tappar inte längre fokus när du skriver eget belopp. Vi uppdaterar `nu: X%` **utan att rendera om** hela raden, och gör full omrendering först på **blur**. 
+
+- **Budgetläge default OFF** vid första start (du tänder själv).
+- **Månad + år i header** kvar.
+- All övrig funktionalitet kvar från 12.4.x (dashboard, PWA/offline, 💳 betalningslåda, års‑export m.m.).
 
 ## Publicera
-1. Skapa repo (t.ex. `budget-pwa-v12.4.2`).
+1. Skapa repo (t.ex. `budget-pwa-v12.4.3`).
 2. Lägg upp allt i `main`.
 3. Settings → Pages → Source = **GitHub Actions**.
-
-## Tips
-Efter uppdatering: gör **hard refresh** (Ctrl+F5 / Cmd+Shift+R) eller unregister service worker om cachen visar gammal version.
+4. Efter deploy: **hard refresh** (Ctrl+F5 eller Cmd+Shift+R) om du ser gammal cache.
