@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <meta name="theme-color" content="#1f4e79" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <title>Hushållsbudget v12.3 (betalning fix)</title>
+  <title>Hushållsbudget v12.4 (period + delning manuellt)</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <link rel="icon" sizes="192x192" href="icons/budget-192.png">
@@ -16,16 +16,17 @@
 <body>
 <header>
   <div class="title">
-    <h1>Hushållsbudget <span class="pill">v12.3</span></h1>
-    <p class="subtitle">Endast fix: 💳 betalningsknapp på varje rad. Övrigt orört från v12.2.</p>
+    <h1>Hushållsbudget <span class="pill">v12.4</span></h1>
+    <p class="subtitle">Nyheter: Månad + år i toppen • Delning per rad med manuella belopp + %</p>
   </div>
   <div class="header-actions">
+    <div id="periodTop" class="period-top">—</div>
     <button id="darkToggle" aria-label="Växla mörkt läge">🌙</button>
     <button id="budgetModeToggle" class="secondary" aria-label="Växla budgetläge">🎯 Budgetläge: ON</button>
   </div>
 </header>
 
-<!-- DASHBOARD TOP (från v12.2) -->
+<!-- DASHBOARD TOP -->
 <section class="dash">
   <div class="cards">
     <div class="card">
@@ -60,7 +61,7 @@
   <div class="year-picker">
     <label for="year">År</label>
     <select id="year">
-      <option value="2023" >2023</option><option value="2024" >2024</option><option value="2025" selected>2025</option><option value="2026" >2026</option><option value="2027" >2027</option><option value="2028" >2028</option><option value="2029" >2029</option><option value="2030" >2030</option>
+      <option value="2024" >2024</option><option value="2025" >2025</option><option value="2026" selected>2026</option><option value="2027" >2027</option><option value="2028" >2028</option><option value="2029" >2029</option><option value="2030" >2030</option><option value="2031" >2031</option>
     </select>
   </div>
   <div class="month-buttons">
@@ -90,7 +91,7 @@
   <section class="meta">
     <div>
       <label for="period">🗓️ Period</label>
-      <input id="period" type="text" placeholder="t.ex. Jan 2025" />
+      <input id="period" type="text" placeholder="t.ex. Jan 2026" />
     </div>
     <div>
       <label for="namn">👤 Namn</label>
@@ -191,7 +192,7 @@
 
   <section class="sec share">
     <h2>Fördelning mellan betalare</h2>
-    <p class="help">Visas automatiskt. Du kan dölja visningen för en person (utan att påverka beräkningen).</p>
+    <p class="help">Visas automatiskt. Du kan dölja visningen för en person (utan att påverka beräkningen). Du kan även ställa in egna belopp per rad via 🔗.</p>
     <div class="share-summary">
       <div>Delad summa (fasta+rörliga): <strong id="sharedTotal">0 kr</strong></div>
       <div>Summa löner: <strong id="salaryTotal">0 kr</strong></div>

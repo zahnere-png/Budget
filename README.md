@@ -1,14 +1,14 @@
-# Hushållsbudget v12.3 (betalning fix)
+# Hushållsbudget v12.4 (period + delning manuellt)
 
-**Detta är en minimal uppdatering av v12.2:**
-- Endast **💳 betalningsknappen per rad** är åtgärdad (öppnar en payments‑drawer, lagrar per rad+månad i `ROWPAID_KEY`).
-- Övrigt (månader, dashboard, delning m.m.) är oförändrat från v12.2.
+**Nyheter:**
+- **Månad + år i toppen** av appen (uppdateras vid månads-/årsbyte).
+- **Delningsknappen (🔗) per rad** har nu **manuella belopp per person** och visar **% av posten** samt **rekommenderad % (borde)** baserat på löneandel.
+- Övriga funktioner från v12.3 kvar: 💳 betalningslåda, dashboard, PWA/offline.
 
 ## Publicera
-1. Skapa repo (t.ex. `budget-pwa-v12.3`).
+1. Skapa repo (t.ex. `budget-pwa-v12.4`).
 2. Lägg upp allt i `main`.
 3. Settings → Pages → Source = **GitHub Actions**.
 
-## Noter
-- Service Worker är versionerad `v12.3` för cache‑bust.
-- Liten klass `label.paid` sätts när en rad markerats som betald.
+## Tips
+- Efter deploy: **Ctrl+F5 / Cmd+Shift+R** eller unregister SW om du ser gammal cache.
